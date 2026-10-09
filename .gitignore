@@ -1,0 +1,6 @@
+.tools/
+references/
+bin/
+obj/
+dist/
+*.user
