@@ -4,3 +4,4 @@ bin/
 obj/
 dist/
 *.user
+tools/dotnet-install.ps1
