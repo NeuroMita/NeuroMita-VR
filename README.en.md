@@ -22,7 +22,7 @@ Checked on October 17, 2026:
 
 Working menu and apartment rendering does not mean the entire game is playable with controllers. See the [interaction audit and acceptance checklist](docs/vr-interaction-audit.md) and [technical checkpoint history](docs/checkpoint.md); these detailed documents currently use Russian and/or English.
 
-October 18 UI batch: Mita action buttons are anchored to her body, with stats above her head during interaction. Panel obstacle checks, projected easel tools and Russian VR settings labels are implemented but still await headset acceptance. Controller drawing and integration into the standard settings page remain unfinished. Full TV browser projection and Toolkit text entry are also awaiting acceptance.
+October 18 UI batch: Mita action buttons are anchored to her body, with stats above her head during interaction. Panel obstacle checks, projected easel tools and Russian VR settings labels are implemented but still await headset acceptance. A follow-up batch implements larger easel tools, ray-based drawing and the native console command catalog; these still await headset acceptance. Integration into the standard settings page remains unfinished. Full TV browser projection and Toolkit text entry are also awaiting acceptance.
 
 ## Compatibility
 
@@ -54,11 +54,11 @@ The game, BepInEx and generated interop are not included in the mod package. Fil
 | Right grip | Interact |
 | Right A | Jump / submit chat in the appropriate context |
 | Right B | Action menu |
-| Left X | Chat |
+| Left X | Tap: chat on release; hold 3 s: console command catalog |
 | Left Y | Pause / back; exit TV minigames |
 | Left trigger | Inventory |
 | Left grip | Push-to-talk |
-| Right stick click | Show / hide hints |
+| Right stick click | In game: hints; in main menu: recenter on Mita and the menu |
 | Hold both stick clicks | Recenter |
 
 Open **VR Settings** in the pause menu to adjust preferences; settings are saved in `BepInEx/config`. This is the current mapping, not a claim that every action and context has passed headset acceptance. Some scenarios still show keyboard prompts.
