@@ -28,7 +28,7 @@ ShouldHideViewingHud уже есть у TVDeviceController в текущем rel
 
 ## Различия интеграции, не новые контракты bridge
 
-- InventoryFullUI в releases ещё читает Input.GetMouseButton / Input.mousePosition при drag и context menu. В VR-ветке применены PointerHeld / PointerDown / PointerPosition / PointerWorldPosition. Публичные input API уже существуют, но этот потребитель не подключён к ним. Успешный запуск мода не доказывает перенос/перестановку слотов инвентаря. Остаётся статический gap для модовой адаптации; без отдельного решения не считать parity достигнутым.
+- InventoryFullUI в releases ещё читает Input.GetMouseButton / Input.mousePosition при drag и context menu. В VR-ветке применены PointerHeld / PointerDown / PointerPosition / PointerWorldPosition. Публичные input API уже существуют, но этот потребитель не подключён к ним. Успешный запуск мода не доказывает перенос/перестановку слотов инвентаря. Теперь VrInventoryDrag в моде перехватывает только VR drag/drop событий InventorySlotView, ведёт собственную иконку и вызывает существующий Inventory.SwapItems. Native OnBeginDrag и mouse-only coroutine для VR-жеста не запускаются. Проверено сборкой и audit; фактическая перестановка в игре остаётся непроверенной.
 - MenuButtonBase в releases активируется на PointerUp, а в VR-ветке — на completed PointerClick (59565f088). Это может активировать release menu при отмене нажатия или отпускании вне кнопки. Мод должен учитывать legacy handler, не требуя изменения host.
 - VR settings registry и остальные VR-specific настройки в Unity-ветке не являются универсальным API расширения настроек. Внешний мод предоставляет собственную страницу настроек и BepInEx config.
 

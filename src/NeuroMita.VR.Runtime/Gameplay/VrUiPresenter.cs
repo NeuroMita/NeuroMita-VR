@@ -419,6 +419,7 @@ namespace NeuroMita.VR
             screenPosition = chosenPosition;
             pointer.position = chosenPosition;
             pointer.pointerCurrentRaycast = chosen;
+            VrInventoryDrag.Update(pointer);
             var target = chosen.gameObject;
             var scroll = target != null ? VrUiDispatch.GetEventHandler<IScrollHandler>(target) : null;
             float scrollAxis = VrRuntime.Input.Turn.y;
@@ -440,6 +441,7 @@ namespace NeuroMita.VR
             bool primary = VrRuntime.Input.PointerPrimaryHeld;
             bool secondary = VrRuntime.Input.PointerSecondaryHeld;
             bool held = rig.HeadTracked && rig.PointerHandTracked && (primary || secondary);
+            if (held && !lastHeld) VrInventoryDrag.PointerDown(target);
             if (held && !lastHeld && target != null)
             {
                 pointer.button = secondary && !primary ? PointerEventData.InputButton.Right : PointerEventData.InputButton.Left;
@@ -523,6 +525,7 @@ namespace NeuroMita.VR
         {
             if (pointer != null) pointer.eligibleForClick = false;
             ReleasePress(null);
+            VrInventoryDrag.Cancel();
             if (hover != null && pointer != null) VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
             hover = null;
             lastHeld = false;

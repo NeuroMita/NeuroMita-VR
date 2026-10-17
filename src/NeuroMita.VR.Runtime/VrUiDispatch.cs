@@ -14,6 +14,7 @@ namespace NeuroMita.VR
         public static bool Execute<T>(GameObject target, BaseEventData data, ExecuteEvents.EventFunction<T> handler) where T : Il2CppObjectBase
         {
             if (target == null) return false;
+            if (VrInventoryDrag.Dispatch<T>(target, data)) return true;
             if (typeof(T) == typeof(IPointerUpHandler) && target.GetComponent<NeuroMita.Menu.MenuButtonBase>() != null)
             {
                 var release = data.Cast<PointerEventData>();
