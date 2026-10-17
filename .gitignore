@@ -1,7 +1,46 @@
-.tools/
-references/
-bin/
-obj/
-dist/
+# Local SDKs, downloaded dependencies and game/interop copies
+/.tools/
+/references/
+/BepInEx/
+/GameAssembly.dll
+/UnityPlayer.dll
+/*_Data/
+# Build outputs and packaged binaries
+**/bin/
+**/obj/
+/dist/
+/artifacts/
+/packages/
+*.dll
+*.exe
+*.pdb
+*.zip
+*.7z
+*.nupkg
+# Machine-specific IDE state and configuration
+/.vs/
+/.vscode/
 *.user
-tools/dotnet-install.ps1
+*.suo
+*.userosscache
+*.sln.docstates
+*.local.*
+.env
+.env.*
+!.env.example
+# Raw diagnostics may contain local paths and identifiers
+/docs/evidence/
+*.log
+*.dmp
+*.mdmp
+/captures/
+/logs/
+# Downloaded installer; use the official SDK distribution
+/tools/dotnet-install.ps1
+Thumbs.db
+.DS_Store
+*.pfx
+*.p12
+*.snk
+*.pem
+**/secrets.json

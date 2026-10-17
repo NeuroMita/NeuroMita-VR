@@ -23,11 +23,7 @@ public sealed class Plugin : BasePlugin
             var bridge = host.GetType("NeuroMita.Modding.ExternalControlBridge", false);
             if (bridge == null || bridge.GetMethod("OpenSession") == null)
                 throw new InvalidOperationException("This game build does not contain the external control API. Apply the API commits and rebuild the host first.");
-            foreach (string name in new[] { "Unity.XR.Management", "Unity.XR.OpenXR", "Unity.InputSystem" })
-            {
-                try { Assembly.Load(name); }
-                catch (Exception exception) { throw new InvalidOperationException("Host XR prerequisite missing: " + name, exception); }
-            }
+            Assembly.Load("Unity.InputSystem");
             string path = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "NeuroMita.VR.Runtime.dll");
             if (!File.Exists(path)) throw new FileNotFoundException("External IL2CPP runtime module is missing. The bootstrap alone cannot provide VR.", path);
             var module = Assembly.LoadFrom(path);
@@ -35,9 +31,20 @@ public sealed class Plugin : BasePlugin
             if (!Equals(runtime.GetProperty("RuntimeBackend")?.GetValue(null), "IL2CPP"))
                 throw new InvalidOperationException("Runtime module was not compiled against IL2CPP interop assemblies.");
             ConfigureSettings(module);
+            var ui = Assembly.Load("UnityEngine.UI");
             foreach (var type in module.GetTypes().Where(IsUnityBehaviour))
-                ClassInjector.RegisterTypeInIl2Cpp(type);
-            runtime.GetMethod("StartVr", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null);
+            {
+                if (type.FullName == "NeuroMita.VR.VrToolkitInputRelay")
+                {
+                    var names = new[] { "IPointerDownHandler", "IPointerUpHandler", "IPointerMoveHandler", "IScrollHandler", "IBeginDragHandler", "IDragHandler", "IPointerEnterHandler", "IPointerExitHandler" };
+                    ClassInjector.RegisterTypeInIl2Cpp(type, new RegisterTypeOptions
+                    {
+                        Interfaces = names.Select(name => ui.GetType("UnityEngine.EventSystems." + name, true)!).ToArray()
+                    });
+                }
+                else ClassInjector.RegisterTypeInIl2Cpp(type);
+            }
+            module.GetType("NeuroMita.VR.VrExternalBootstrap", true)!.GetMethod("Schedule")!.Invoke(null, null);
             started = true;
             Log.LogInfo("External VR runtime requested; OpenXR status is reported by the runtime. Headset readiness is not implied.");
         }

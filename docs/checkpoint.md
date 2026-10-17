@@ -1,17 +1,21 @@
-# Checkpoint 2026-10-09
+# Проверенный статус — 2026-10-17
 
-Bootstrap build passed: BepInEx 6.0.0-be.788, Il2CppInterop 1.5.3, .NET 6 target.
-No external runtime DLL exists yet. Do not distribute the bootstrap as working VR.
+Изолированный host: Windows x64 IL2CPP, исходники 46d89dce1, Unity 6000.3.12f1, BepInEx 6.0.0-be.788 и Il2CppInterop 1.5.3. Это конкретная тестовая копия, а не гарантия совместимости со всеми релизами.
 
-Unity API commits and remaining work are recorded in
-../VinerX_NeuroMita-Unity/Docs/vr-module-checkpoint-2026-10-09.md.
+- Bootstrap и полный внешний runtime собираются с реальными host interop DLL: 0 ошибок, 0 предупреждений.
+- Общая игровая VR-логика используется из отдельного Unity-checkout. XR lifecycle заменён собственным native backend, без поддельных XR Management классов.
+- Реальный BepInEx запуск зарегистрировал injected компоненты и дошёл до OpenXR active.
+- Native session creation: True; Native XR display=True, input=True.
+- Регистрация профиля Oculus Touch и attach action sets прошли: Touch controller actions attached.
+- Материалы и меши кистей собраны отдельным AssetBundle. Это устраняет зависимость от наличия VR Resources в host.
+- Исправлены обнаруженные при запуске ошибки CLR RectTransform casts, stripped BeforeRender helper, чтения pose через stripped Span wrapper и отсутствующего материала указателя.
+- При повторной привязке камеры host вырезал tracking-origin event. Подписка защищена; после изменения origin может требоваться recenter обоими стиками.
+- 37/37 выбранных Unity EditMode тестов общей логики прошли после переноса. Это Mono-проверки, они не заменяют IL2CPP запуск.
+- Headset acceptance не выполнялась: изображение, руки, физические кнопки, house, пауза, смартфон и радио во внешнем моде остаются для ручной проверки.
+- Старый API-only host не имеет новых TV HUD suppression hooks; этот путь ограничен адаптером совместимости.
 
-Local SDK: .tools/dotnet/dotnet.exe. Build:
-.tools/dotnet/dotnet.exe build src/NeuroMitaVRmod/NeuroMitaVRmod.csproj -c Release
+HOST_API_PROBE_PASS относится к отдельной проверке host API в той копии. Эта дополнительная DLL в игровой ZIP не включается. Диагностический XR probe в игровой ZIP также не входит.
 
-Official loader archive SHA256:
-F4CC496BD098A0DF4164B81E3737297707F13A47C2478DBA2F60EEFAB784817A
-Source: https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip
+Ранее наблюдалась XR_ERROR_RUNTIME_FAILURE при отключённом wireless HMD; это историческое наблюдение. Новый native backend дошёл до создания сессии и запуска subsystem, поэтому прежний неуспешный probe не описывает текущий результат.
 
-Host probe build was scheduled through Unity MCP; its completion is unconfirmed.
-Generated interop, injected runtime compilation and headset acceptance remain.
+Сырые логи, игровые файлы и generated interop остаются локальными и игнорируются. Пакет сохраняет SHA256 файлов, версию OpenXR и ревизию общей Unity-логики в package-receipt.json. Неподтверждённые возможности не следует объявлять готовыми по одному успешному запуску.

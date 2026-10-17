@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>NeuroMita.XR.Probe</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>https://api.nuget.org/v3/index.json;https://nuget.bepinex.dev/v3/index.json;https://nuget.samboy.dev/v3/index.json</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.788" IncludeAssets="compile" />
+    <Reference Include="$(HostDirectory)\BepInEx\interop\*.dll" />
+  </ItemGroup>
+  <Target Name="ValidateHost" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(HostDirectory)' == ''" Text="Pass -p:HostDirectory=... for the matching game with generated BepInEx interop." />
+    <Error Condition="!Exists('$(HostDirectory)\BepInEx\interop\UnityEngine.XRModule.dll')" Text="Matching host XR interop is missing. Run the game with BepInEx first." />
+  </Target>
+</Project>
