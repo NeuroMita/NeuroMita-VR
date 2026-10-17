@@ -14,7 +14,7 @@ namespace NeuroMita.VR
         private int pageIndex;
         private float nextDiscovery;
         private string language;
-        private Text entryLabel;
+        private Text entryLabel, consoleLabel, commandsLabel;
         private readonly PropertyInfo[] settings = typeof(VrSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanWrite && (p.PropertyType == typeof(bool) || p.PropertyType == typeof(int))).ToArray();
         public VrSettingsPanel(IntPtr pointer) : base(pointer) { }
@@ -39,6 +39,10 @@ namespace NeuroMita.VR
                     language = LocalizationManager.CurrentLanguage;
                     entryLabel.text = VrSettingsText.Pick("VR Settings", "Настройки VR");
                     entryLabel.font = LocalizationManager.CurrentFont ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    consoleLabel.text = VrSettingsText.Pick("Console (hold X)", "Консоль (удерживать X)");
+                    consoleLabel.font = entryLabel.font;
+                    commandsLabel.text = VrSettingsText.Pick("Commands", "Команды");
+                    commandsLabel.font = entryLabel.font;
                     Rebuild();
                 }
                 return;
@@ -48,6 +52,8 @@ namespace NeuroMita.VR
             root = VrModPanel.Rect("VR settings", canvas.transform, new Vector2(780f, 600f), Vector2.zero);
             language = LocalizationManager.CurrentLanguage;
             entryLabel = VrModPanel.Button(root, VrSettingsText.Pick("VR Settings", "Настройки VR"), new Vector2(260f, 60f), new Vector2(0f, -365f), () => Open()).GetComponentInChildren<Text>();
+            consoleLabel = VrModPanel.Button(root, VrSettingsText.Pick("Console (hold X)", "Консоль (удерживать X)"), new Vector2(380f, 60f), new Vector2(0f, -435f), () => VrConsoleAccess.Toggle()).GetComponentInChildren<Text>();
+            commandsLabel = VrModPanel.Button(root, VrSettingsText.Pick("Commands", "Команды"), new Vector2(380f, 60f), new Vector2(0f, -505f), () => VrConsoleAccess.OpenCommands()).GetComponentInChildren<Text>();
             page = VrModPanel.Rect("VR settings page", root, new Vector2(780f, 600f), new Vector2(0f, 0f));
             page.localPosition = new Vector3(0f, 0f, -2f);
             page.gameObject.AddComponent<Image>().color = new Color(0.055f, 0.025f, 0.075f, 1f);

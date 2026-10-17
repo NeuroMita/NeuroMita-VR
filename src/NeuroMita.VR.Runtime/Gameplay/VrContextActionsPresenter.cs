@@ -125,7 +125,15 @@ namespace NeuroMita.VR
                 : eye.position + eye.rotation * new Vector3(-0.25f, -0.25f, 0.65f);
             Place(handPanel, actionAnchor, 0.34f, rig.Eye);
             Vector3 towardEye = (eye.position - worldAnchor).normalized;
-            Place(worldPanel, worldAnchor + towardEye * 0.08f, 0.46f, rig.Eye);
+            Vector3 worldPosition = worldAnchor + towardEye * 0.3f + Vector3.up * 0.12f;
+            if (worldTarget != null && worldTarget.GetComponentInParent<PlayerSleep>() != null)
+            {
+                worldPosition.y = Mathf.Max(worldPosition.y, eye.position.y - 0.25f);
+                Vector3 offset = worldPosition - eye.position;
+                worldPosition = eye.position + offset.normalized * Mathf.Clamp(offset.magnitude, 0.65f, 1f);
+            }
+            Place(worldPanel, worldPosition, 0.46f, rig.Eye);
+            if (worldPanel.Count > 0) VrPanelPlacement.Place(worldPanel.Rect, rig.Eye, worldPosition, 0.46f);
             if (itemStatus != null)
             {
                 itemStatus.Canvas.enabled = true;

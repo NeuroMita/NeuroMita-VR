@@ -11,6 +11,8 @@ namespace NeuroMita.VR
         private UIDocument easelDocument;
         private VrToolkitWorldPanel easelPanel;
         private float nextEaselDiscovery;
+        private VrEaselLayout layout;
+        private Vector3 placedEye;
 
         private void LateUpdate()
         {
@@ -35,14 +37,30 @@ namespace NeuroMita.VR
                     easelDocument = doc;
                 }
                 if (easelPanel == null && doc != null && doc.panelSettings != null)
-                    easelPanel = new VrToolkitWorldPanel(doc, transform, rig.Eye, VrRuntime.Presenter, "Easel tools");
+                {
+                    easelPanel = new VrToolkitWorldPanel(doc, transform, rig.Eye, VrRuntime.Presenter, "Easel tools", 800, 1100, 0.8f, 1.5f);
+                    layout = VrEaselDrawing.IsInstalled ? new VrEaselLayout(current.easelUI) : null;
+                    placedEye = Vector3.positiveInfinity;
+                }
             }
             if (easel == null || !easel.IsOpen) { ReleaseEasel(); return; }
             easelPanel?.Refresh(rig.Eye);
+            layout?.Refresh(easelDocument?.rootVisualElement?.layout.width ?? 533f);
+            if (easelPanel != null && Vector3.Distance(placedEye, rig.Eye.transform.position) > 0.25f)
+            {
+                var eye = rig.Eye.transform;
+                Vector3 center = easel.canvasQuad != null ? easel.canvasQuad.bounds.center : easel.transform.position + Vector3.up;
+                Vector3 direction = Vector3.ProjectOnPlane(center - eye.position, Vector3.up);
+                var facing = direction.sqrMagnitude > 0.001f ? Quaternion.LookRotation(direction, Vector3.up) : Quaternion.Euler(0f, eye.eulerAngles.y, 0f);
+                easelPanel.Place(rig.Eye, eye.position + facing * new Vector3(-0.65f, -0.05f, 0.9f), 0.8f);
+                placedEye = eye.position;
+            }
         }
 
         private void ReleaseEasel()
         {
+            layout?.Dispose();
+            layout = null;
             easelPanel?.Dispose();
             easelPanel = null;
             easelDocument = null;

@@ -60,6 +60,8 @@ namespace NeuroMita.VR
             Add(NeuroMita.Modding.ExternalInputAction.PushToTalk, "LeftHand", "gripPressed");
             Add(NeuroMita.Modding.ExternalInputAction.Pause, "LeftHand", "secondaryButton");
             Add(NeuroMita.Modding.ExternalInputAction.Run, "LeftHand", "{Primary2DAxisClick}");
+            foreach (var direction in new[] { NeuroMita.Modding.ExternalInputAction.MoveForward, NeuroMita.Modding.ExternalInputAction.MoveBackward,
+                NeuroMita.Modding.ExternalInputAction.MoveLeft, NeuroMita.Modding.ExternalInputAction.MoveRight }) buttons[direction] = new VrButtonState();
             map.Enable();
         }
 
@@ -82,6 +84,7 @@ namespace NeuroMita.VR
             crouch.Sample(canCrouch && VrPosePolicy.IsCrouched(crouch.Held, rig.TrackedHeightDelta), sampledFrame);
             if (!sprintTracking || Time.timeScale <= 0f || input?.CurrentState != InputManager.InputState.Gameplay)
                 sprintToggled = false;
+            SampleDirections();
             foreach (var pair in actions)
             {
                 bool left = pair.Key == NeuroMita.Modding.ExternalInputAction.OpenChat || pair.Key == NeuroMita.Modding.ExternalInputAction.Inventory ||
@@ -93,6 +96,20 @@ namespace NeuroMita.VR
                     sprintTracking && input?.CurrentState == InputManager.InputState.Gameplay)
                     sprintToggled = !sprintToggled;
             }
+        }
+
+        private void SampleDirections()
+        {
+            Vector2 axis = Move;
+            SampleDirection(NeuroMita.Modding.ExternalInputAction.MoveLeft, -axis.x);
+            SampleDirection(NeuroMita.Modding.ExternalInputAction.MoveRight, axis.x);
+            SampleDirection(NeuroMita.Modding.ExternalInputAction.MoveForward, axis.y);
+            SampleDirection(NeuroMita.Modding.ExternalInputAction.MoveBackward, -axis.y);
+        }
+        private void SampleDirection(NeuroMita.Modding.ExternalInputAction action, float axis)
+        {
+            var state = buttons[action];
+            state.Sample(axis > (state.Held ? 0.3f : 0.6f), sampledFrame);
         }
 
         public bool Held(NeuroMita.Modding.ExternalInputAction action)
@@ -151,7 +168,9 @@ namespace NeuroMita.VR
             ? turn.ReadValue<Vector2>() : Vector2.zero;
         public bool RecenterHeld => IsActive && VrRuntime.Rig?.HeadTracked == true && VrRuntime.Rig.LeftHandTracked &&
             VrRuntime.Rig.RightHandTracked && leftClick.IsPressed() && rightClick.IsPressed();
-        public bool HelpDown => IsActive && VrRuntime.Rig?.HeadTracked == true &&
+        public bool MenuRecenterDown => IsActive && VrRuntime.Rig?.Player == null &&
+            VrRuntime.Rig?.HeadTracked == true && VrRuntime.Rig.RightHandTracked && rightClick.WasPressedThisFrame();
+        public bool HelpDown => IsActive && VrRuntime.Rig?.Player != null && VrRuntime.Rig?.HeadTracked == true &&
             VrRuntime.Rig.RightHandTracked && rightClick.WasPressedThisFrame() && !leftClick.IsPressed();
 
         private static Vector2 ApplyDeadzone(Vector2 value)

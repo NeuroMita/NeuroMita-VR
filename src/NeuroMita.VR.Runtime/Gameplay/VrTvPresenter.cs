@@ -19,6 +19,9 @@ namespace NeuroMita.VR
         private TVInteractionController interaction;
         private int revision = -1;
         private float nextDiscovery;
+        private Vector3 placedEye;
+        private float placedYaw;
+        private bool externalCamera;
         private readonly List<Text> labels = new();
         private readonly List<Button> buttons = new();
         private TVUIController[] candidates = System.Array.Empty<TVUIController>();
@@ -63,12 +66,6 @@ namespace NeuroMita.VR
             EnsureCanvas(pointer);
             canvas.gameObject.SetActive(true);
             canvas.worldCamera = rig.Eye;
-            if (opening)
-            {
-                var eye = rig.Eye.transform;
-                var facing = Quaternion.Euler(0f, eye.eulerAngles.y, 0f);
-                panel.SetPositionAndRotation(eye.position + facing * new Vector3(0.5f, -0.15f, 0.8f), facing);
-            }
             var document = current.view != null ? current.view.GetComponent<UnityEngine.UIElements.UIDocument>() : null;
             if (document != browserDocument)
             {
@@ -79,6 +76,23 @@ namespace NeuroMita.VR
             if (browser == null && document?.panelSettings != null)
                 browser = new VrToolkitWorldPanel(document, transform, rig.Eye, pointer);
             browser?.Refresh(rig.Eye);
+            bool overridden = rig.Player?.Camera?.HasExternalOverride == true;
+            bool reposition = opening || externalCamera != overridden || Vector3.Distance(placedEye, rig.Eye.transform.position) > 0.3f || Mathf.Abs(Mathf.DeltaAngle(placedYaw, rig.BodyYaw)) > 20f;
+            if (reposition)
+            {
+                var eye = rig.Eye.transform;
+                Vector3 screen = owner.ScreenTarget != null ? owner.ScreenTarget.position : owner.transform.position;
+                Vector3 direction = Vector3.ProjectOnPlane(screen - eye.position, Vector3.up);
+                if (direction.sqrMagnitude < 0.01f) direction = Vector3.ProjectOnPlane(eye.forward, Vector3.up);
+                var facing = Quaternion.LookRotation(direction, Vector3.up);
+                float distance = Mathf.Clamp(Vector3.Distance(screen, eye.position) * 0.65f, 0.55f, 1f);
+                Vector3 center = eye.position + facing * new Vector3(0f, -0.12f, distance);
+                VrPanelPlacement.Place(panel, rig.Eye, center + facing * new Vector3(0.45f, -0.25f, -0.05f), 0.6f);
+                browser?.Place(rig.Eye, center + facing * new Vector3(-0.35f, 0.2f, 0f), 0.9f);
+                placedEye = eye.position;
+                placedYaw = rig.BodyYaw;
+            }
+            externalCamera = overridden;
             if (browser?.Canvas != null && pointer?.IsPointingAt(browser.Canvas) == true && current.view != null)
             {
                 var view = current.view;

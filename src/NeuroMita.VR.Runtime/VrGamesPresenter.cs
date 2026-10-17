@@ -10,6 +10,9 @@ namespace NeuroMita.VR
         private Canvas canvas;
         private Text title;
         private float nextDiscovery;
+        private Vector3 placedEye;
+        private float placedYaw;
+        private readonly System.Collections.Generic.Dictionary<GameObject, bool> hiddenHints = new();
         private IDisposable photoExclusion;
         public VrGamesPresenter(IntPtr pointer) : base(pointer) { }
 
@@ -35,17 +38,29 @@ namespace NeuroMita.VR
             var eye = VrRuntime.Rig.Eye;
             if (eye == null) return;
             current.Controller.KeysMenuActive(false);
+            foreach (var legacy in FindObjectsByType<NeuroMita.Legacy.Games.LegacyFightTelevisionGame>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                var root = legacy.interfaceHintRoot;
+                if (root == null) continue;
+                if (!hiddenHints.ContainsKey(root.gameObject)) hiddenHints.Add(root.gameObject, root.gameObject.activeSelf);
+                root.gameObject.SetActive(false);
+            }
             EnsureCanvas();
             bool opening = !canvas.gameObject.activeSelf;
             canvas.gameObject.SetActive(Time.timeScale > 0f && AppServices.GetOrNull<UIManager>()?.FocusedType == null);
             canvas.worldCamera = eye;
-            if (opening)
+            if (opening || Vector3.Distance(placedEye, eye.transform.position) > 0.3f || Mathf.Abs(Mathf.DeltaAngle(placedYaw, VrRuntime.Rig.BodyYaw)) > 20f)
             {
-                var facing = Quaternion.Euler(0f, eye.transform.eulerAngles.y, 0f);
-                canvas.transform.SetPositionAndRotation(eye.transform.position + facing * new Vector3(0f, -0.42f, 1.15f), facing);
+                var device = current.GetComponentInParent<TVDeviceController>();
+                Vector3 screen = device?.ScreenTarget != null ? device.ScreenTarget.position : current.transform.position;
+                Vector3 direction = Vector3.ProjectOnPlane(screen - eye.transform.position, Vector3.up);
+                var facing = direction.sqrMagnitude > 0.001f ? Quaternion.LookRotation(direction, Vector3.up) : Quaternion.Euler(0f, eye.transform.eulerAngles.y, 0f);
+                VrPanelPlacement.Place(canvas.GetComponent<RectTransform>(), eye, eye.transform.position + facing * new Vector3(0f, -0.35f, 0.85f), 0.9f);
+                placedEye = eye.transform.position;
+                placedYaw = VrRuntime.Rig.BodyYaw;
             }
             title.text = "TV: " + (current.Controller.IsMenuActive ? current.SelectedGameDisplayName : current.ActiveGameDisplayName) +
-                "\nLeft Y: exit TV  |  Stick: move  |  Right A / grip: action";
+                VrSettingsText.Pick("\nLeft Y: exit | Stick: select / move | A: play / jump | Grip: hit", "\nY: выйти | Стик: выбор / движение | A: играть / прыжок | Хват: удар");
         }
         private void EnsureCanvas()
         {
@@ -72,7 +87,12 @@ namespace NeuroMita.VR
             canvas.gameObject.SetActive(false);
         }
         private void Select(int direction) { if (current?.Controller?.IsMenuActive == true) current.Controller.ChangeGame(direction); }
-        private void Hide() { if (canvas != null) canvas.gameObject.SetActive(false); }
-        private void OnDestroy() { if (current?.Controller?.IsMenuActive == true) current.Controller.KeysMenuActive(true); photoExclusion?.Dispose(); if (canvas != null) Destroy(canvas.gameObject); }
+        private void Hide()
+        {
+            if (canvas != null) canvas.gameObject.SetActive(false);
+            foreach (var hint in hiddenHints) if (hint.Key != null) hint.Key.SetActive(hint.Value);
+            hiddenHints.Clear();
+        }
+        private void OnDestroy() { Hide(); if (current?.Controller?.IsMenuActive == true) current.Controller.KeysMenuActive(true); photoExclusion?.Dispose(); if (canvas != null) Destroy(canvas.gameObject); }
     }
 }

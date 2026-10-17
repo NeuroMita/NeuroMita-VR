@@ -176,7 +176,7 @@ namespace NeuroMita.VR
             if (eye == null || !VrRuntime.IsActive) return;
             ApplyPose();
             bool recenter = VrRuntime.Input.RecenterHeld;
-            if (recenterHold.Sample(recenter, Time.unscaledDeltaTime)) Recenter();
+            if (VrRuntime.Input.MenuRecenterDown || recenterHold.Sample(recenter, Time.unscaledDeltaTime)) Recenter();
             var settings = VrRuntime.Settings;
             if (lastSeated != (settings?.VrSeated == true))
             {

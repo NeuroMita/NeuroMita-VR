@@ -149,6 +149,13 @@ namespace NeuroMita.VR
         {
             if (ToolkitUsable) { SubmitToolkit(); return; }
             if (!Usable(target)) return;
+            var console = FindFirstObjectByType<ConsoleInterface>();
+            if (console != null && console.InputField != null && console.InputField == target)
+            {
+                console.EnterConsole();
+                CaptureSelection();
+                return;
+            }
             var composer = MitaAI.InputControl.Instance;
             if (composer != null && composer.ComposerField == target) composer.TrySubmitDraft();
             else

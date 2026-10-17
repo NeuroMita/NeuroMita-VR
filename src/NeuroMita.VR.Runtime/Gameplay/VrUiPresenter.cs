@@ -287,6 +287,7 @@ namespace NeuroMita.VR
         private static float PanelDistance(Panel panel)
         {
             float distance = (VrRuntime.Settings?.VrUiDistance ?? 150) * 0.01f;
+            if (VrRuntime.Rig?.Player == null && !panel.backdrop) distance = Mathf.Min(distance, 1.1f);
             return panel.backdrop ? Mathf.Max(3.5f, distance + 2f) :
                 distance - Mathf.Clamp(panel.canvas.sortingOrder, -100, 100) * 0.0001f;
         }

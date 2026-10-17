@@ -188,12 +188,14 @@ namespace NeuroMita.VR
             gameObject.AddComponent<VrPhonePresenter>();
             gameObject.AddComponent<VrRadioPresenter>();
             gameObject.AddComponent<VrEaselPresenter>();
+            gameObject.AddComponent<VrSceneTransitionPresenter>();
             contextActions = gameObject.AddComponent<VrContextActionsPresenter>();
             gameObject.AddComponent<VrTvPresenter>();
             settingsPanel = gameObject.AddComponent<VrSettingsPanel>();
             games = gameObject.AddComponent<VrGamesPresenter>();
             gameObject.AddComponent<VrHotbarPresenter>();
             VrQteHooks.Install();
+            VrEaselDrawing.Install();
             VrEarlyInputLoop.Install();
             initialized = true;
             VrDiscordPresence.Install();
@@ -219,6 +221,7 @@ namespace NeuroMita.VR
 
         private void OnActiveSceneChanged(Scene previous, Scene current)
         {
+            VrConsoleAccess.Clear();
             nextDiscovery = 0f;
             Presenter?.CancelInput();
             Keyboard?.Clear();
@@ -281,6 +284,7 @@ namespace NeuroMita.VR
                 down |= 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
                 VrDebugControl.PauseRequested = false;
             }
+            VrConsoleAccess.Filter(ref held, ref down, ref up);
             ulong pauseBit = 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
             if (!VrQteInput.CapturesActions && (down & pauseBit) != 0 && (settingsPanel?.ClosePage() == true || games?.CloseActive() == true))
             {
@@ -336,7 +340,7 @@ namespace NeuroMita.VR
             const string key = "ui.gameplay_help.vr";
             string text = LocalizationManager.GetTableString(key);
             if (string.IsNullOrWhiteSpace(text) || text == key)
-                text = "<b>VR controls</b>\nLeft stick: move; right stick: turn\nLeft Y: pause / back / close player\nRight stick click: show / hide hints\nRight trigger: click / drag UI\nRight grip: interact\nLeft trigger: inventory; left X: chat\nRight A: jump / submit chat; right B: action menu\nHold both stick clicks: recenter";
+                text = "<b>VR controls</b>\nLeft stick: move; right stick: turn\nLeft Y: pause / back / close player\nRight stick click: show / hide hints\nRight trigger: click / drag UI\nRight grip: interact\nLeft trigger: inventory; tap left X: chat, hold 3s: console\nRight A: jump / submit chat; right B: action menu\nHold both stick clicks: recenter";
             return text
                 .Replace("Right trigger: click / drag UI", "Aim the cyan ray at UI\nRight trigger: click / drag UI")
                 .Replace("Правый триггер: выбор / перетаскивание", "Цельтесь лучом в интерфейс\nПравый триггер: выбор / перетаскивание");
@@ -416,6 +420,8 @@ namespace NeuroMita.VR
             initialized = false;
             Cleanup(VrEarlyInputLoop.Remove, "early input loop");
             Cleanup(VrQteHooks.Remove, "QTE hooks");
+            Cleanup(VrEaselDrawing.Remove, "easel hooks");
+            VrConsoleAccess.Clear();
             Cleanup(VrDiscordPresence.Remove, "Discord presence");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");
             Cleanup(() => RefreshMenuAttention(null), "menu attention");

@@ -67,7 +67,7 @@ namespace NeuroMita.VR
                 stage.lights.Add(new LightPlacement(light.transform));
 
             }
-            Vector3 position = origin + direction.normalized * 2.2f;
+            Vector3 position = origin + direction.normalized * 1.8f;
             position.y = camera.transform.position.y;
             Quaternion facing = Quaternion.LookRotation(-direction.normalized, Vector3.up);
             camera.transform.SetPositionAndRotation(position, facing);

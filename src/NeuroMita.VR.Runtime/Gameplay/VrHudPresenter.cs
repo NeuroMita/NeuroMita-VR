@@ -107,7 +107,7 @@ namespace NeuroMita.VR
                     if (mood?.Canvas != null)
                     {
                         mood.Canvas.enabled = true;
-                        Vector3 above = head + Vector3.up * 0.3f;
+                        Vector3 above = head + Vector3.up * 0.5f;
                         mood.Place(above, FaceEye(above, eye), 0.42f, rig.Eye);
                     }
                     interaction.Place(position, FaceEye(position, eye), 0.55f, rig.Eye);
@@ -117,8 +117,9 @@ namespace NeuroMita.VR
 
         private static Quaternion FaceEye(Vector3 position, Transform eye)
         {
-            Vector3 forward = position - eye.position;
-            return forward.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(forward, eye.up) : eye.rotation;
+            Vector3 forward = Vector3.ProjectOnPlane(position - eye.position, Vector3.up);
+            return forward.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(forward, Vector3.up) :
+                Quaternion.Euler(0f, eye.eulerAngles.y, 0f);
         }
 
         private void LateUpdate()
