@@ -31,6 +31,12 @@ while (queue.TryDequeue(out var item))
 {
     var key = item.method.DeclaringType.Scope + ":" + item.method.FullName;
     if (!visited.Add(key)) continue;
+    if (item.method.DeclaringType.FullName.StartsWith("Il2CppSystem.Span`1", StringComparison.Ordinal) ||
+        item.method.DeclaringType.FullName.StartsWith("Il2CppSystem.ReadOnlySpan`1", StringComparison.Ordinal))
+    {
+        issues.Add(new { caller = item.path, unsafeSpan = item.method.FullName, depth = item.depth });
+        continue;
+    }
     MethodDefinition method;
     try { method = item.method.Resolve(); }
     catch { unresolved.Add(item.method.DeclaringType.Scope + ":" + item.method.FullName); continue; }

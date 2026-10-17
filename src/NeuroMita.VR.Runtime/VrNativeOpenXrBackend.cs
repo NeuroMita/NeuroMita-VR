@@ -97,6 +97,7 @@ namespace NeuroMita.VR
 
         private void OnNativeEvent(int kind, ulong payload)
         {
+            VrDiagnostics.Mark("XR event", kind + ", payload=" + payload);
             if (kind == 11) ready = true;
             if (kind == 15 || kind == 16 || kind == 17 || kind == 18) stopping = true;
         }

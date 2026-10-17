@@ -21,6 +21,7 @@ namespace NeuroMita.VR
         private readonly bool analog;
         private int frame = -1;
         private bool held, down;
+        private bool reported;
 
         public VrNativeControl(string binding)
         {
@@ -53,6 +54,11 @@ namespace NeuroMita.VR
                     else
                         held = InputDevices.TryGetFeatureValue_bool_Injected(device.deviceId, ref span, out bool value) && value;
                 }
+            }
+            if (!reported || held != previous)
+            {
+                VrDiagnostics.Mark("raw control", hand + "/" + usage + ", device=" + device.deviceId + ", valid=" + device.isValid + ", held=" + held);
+                reported = true;
             }
             down = held && !previous;
             return held;

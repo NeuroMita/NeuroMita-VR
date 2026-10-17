@@ -18,6 +18,7 @@ namespace NeuroMita.VR
         private VrPlayerRig rig;
         private float nextDiscovery;
         private bool initialized;
+        private int inputFrame = -1;
         private IDisposable inputRegistration;
         private string controlSession;
         private VrGraphicsPresenter graphics;
@@ -90,9 +91,12 @@ namespace NeuroMita.VR
                 if (instance.stopping) restartRequested = true;
                 return;
             }
+            VrDiagnostics.Start();
+            VrDiagnostics.Mark("StartVr");
             var root = VrObject.Create("NeuroMita VR Runtime");
             DontDestroyOnLoad(root);
             instance = root.AddComponent<VrRuntime>();
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NEUROMITA_VR_DIAGNOSTICS"))) root.AddComponent<VrDebugControl>();
         }
 
         public static void StopVr()
@@ -184,6 +188,7 @@ namespace NeuroMita.VR
             contextActions = gameObject.AddComponent<VrContextActionsPresenter>();
             gameObject.AddComponent<VrTvPresenter>();
             gameObject.AddComponent<VrHotbarPresenter>();
+            VrEarlyInputLoop.Install();
             initialized = true;
             graphics = gameObject.AddComponent<VrGraphicsPresenter>();
             Keyboard = gameObject.AddComponent<VrVirtualKeyboard>();
@@ -198,11 +203,12 @@ namespace NeuroMita.VR
             initialized = false;
             stopping = true;
             Status = message;
+            VrDiagnostics.Mark("failure", message);
             Debug.LogWarning("[NeuroMita VR] " + message);
             Destroy(gameObject);
         }
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => nextDiscovery = 0f;
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) { VrDiagnostics.Mark("scene loaded", scene.name + ", mode=" + mode); nextDiscovery = 0f; }
 
         private void OnActiveSceneChanged(Scene previous, Scene current)
         {
@@ -223,9 +229,12 @@ namespace NeuroMita.VR
             return true;
         }
 
+        public static void PrepareInputFrame() => instance?.Update();
+
         private void Update()
         {
-            if (!initialized) return;
+            if (!initialized || inputFrame == Time.frameCount) return;
+            inputFrame = Time.frameCount;
             if (!TryMaintainControlSession())
             {
                 Fail("Another module owns external control; VR could not resume its session");
@@ -258,7 +267,14 @@ namespace NeuroMita.VR
                 if (Input.Down(externalAction)) down |= bit;
                 if (Input.Up(externalAction)) up |= bit;
             }
+            if (VrDebugControl.PauseRequested)
+            {
+                held |= 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
+                down |= 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
+                VrDebugControl.PauseRequested = false;
+            }
             Vector2 movement = Input.Move;
+            VrDiagnostics.Controls(rig, held, down, movement);
             Vector2 pointer = Presenter != null ? Presenter.PointerPosition : Vector2.zero;
             if (!TryMaintainControlSession() || !NeuroMita.Modding.ExternalControlBridge.SetInput(controlSession, held, down, up,
                 movement.x, movement.y, true, true, pointer.x, pointer.y, Presenter != null) ||
@@ -268,8 +284,10 @@ namespace NeuroMita.VR
                 Fail("External control session was lost");
                 return;
             }
+            VrDiagnostics.HostControls(rig, down, movement);
             NeuroMita.Modding.ExternalControlBridge.SetCameraOwnership(controlSession, rig != null ? rig.Player : null, true);
-            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, Input.HelpDown, ResolveHelpText());
+            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, Input.HelpDown || VrDebugControl.HelpRequested, ResolveHelpText());
+            VrDebugControl.HelpRequested = false;
             NeuroMita.Modding.ExternalControlBridge.SetSpeechPolicy(controlSession, true, rig?.HeadTracked == true && rig.LeftHandTracked);
             NeuroMita.Modding.ExternalControlBridge.SetAvatarPresentation(controlSession, Settings?.VrAvatarMode ?? 0, rig?.UseIsolatedHands == true);
             while (NeuroMita.Modding.ExternalControlBridge.TryDequeueCanvas(controlSession, out var canvas))
@@ -290,7 +308,10 @@ namespace NeuroMita.VR
 
         private static string ResolveHelpText()
         {
-            string text = LocalizationManager.GetTableString("ui.gameplay_help.vr") ?? "VR controls: F1";
+            const string key = "ui.gameplay_help.vr";
+            string text = LocalizationManager.GetTableString(key);
+            if (string.IsNullOrWhiteSpace(text) || text == key)
+                text = "<b>VR controls</b>\nLeft stick: move; right stick: turn\nLeft Y: pause / back / close player\nRight stick click: show / hide hints\nRight trigger: click / drag UI\nRight grip: interact\nLeft trigger: inventory; left X: chat\nRight A: jump / submit chat; right B: action menu\nHold both stick clicks: recenter";
             return text
                 .Replace("Right trigger: click / drag UI", "Aim the cyan ray at UI\nRight trigger: click / drag UI")
                 .Replace("Правый триггер: выбор / перетаскивание", "Цельтесь лучом в интерфейс\nПравый триггер: выбор / перетаскивание");
@@ -317,10 +338,14 @@ namespace NeuroMita.VR
             }
             if (camera != null && rig == null)
             {
+                VrDiagnostics.Mark("rig attach", "scene=" + content.name + ", camera=" + camera.name + ", player=" + (player != null));
                 rig = camera.gameObject.AddComponent<VrPlayerRig>();
                 rig.Bind(camera, player);
+                VrDiagnostics.Mark("rig bound");
                 Presenter.Bind(rig);
+                VrDiagnostics.Mark("pointer bound");
                 hud.Bind(rig, Presenter);
+                VrDiagnostics.Mark("hud bound");
             }
             Presenter.RefreshCanvases();
             RefreshMenuAttention(menuCamera != null && rig != null ? rig.Eye.transform : null);
@@ -364,6 +389,7 @@ namespace NeuroMita.VR
         private void OnDestroy()
         {
             initialized = false;
+            Cleanup(VrEarlyInputLoop.Remove, "early input loop");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");
             Cleanup(() => RefreshMenuAttention(null), "menu attention");
             Cleanup(() => hud?.Restore(), "HUD");
