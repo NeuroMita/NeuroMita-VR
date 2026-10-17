@@ -93,6 +93,53 @@ namespace NeuroMita.VR
                         VrDiagnostics.Mark("render isolation", "comfort and PostProcessLayer disabled for this run");
                     }
                 }
+                else if (command == "mita-test")
+                {
+                    var service = FindFirstObjectByType<MitaInteractionService>();
+                    var actor = FindFirstObjectByType<MitaAI.MitaActor>();
+                    if (service == null || actor == null) throw new InvalidOperationException("No interaction service/actor");
+                    service.Open(actor);
+                }
+                else if (command == "capture-radio")
+                {
+                    foreach (var document in FindObjectsByType<UnityEngine.UIElements.UIDocument>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                    {
+                        var texture = document.panelSettings?.targetTexture;
+                        if (document.GetComponent<MusicListUI>() == null || texture == null) continue;
+                        var previous = RenderTexture.active;
+                        Texture2D image = null;
+                        try
+                        {
+                            RenderTexture.active = texture;
+                            image = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+                            image.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+                            image.Apply();
+                            var encoded = ImageConversion.EncodeToPNG(image);
+                            var bytes = new byte[encoded.Length];
+                            for (int i = 0; i < bytes.Length; i++) bytes[i] = encoded[i];
+                            File.WriteAllBytes(Path.Combine(directory, "radio-" + DateTime.UtcNow.ToString("HHmmss") + ".png"), bytes);
+                            VrDiagnostics.Mark("radio texture captured", "created=" + texture.IsCreated() + ", size=" + texture.width + "x" + texture.height);
+                        }
+                        finally { RenderTexture.active = previous; if (image != null) Destroy(image); }
+                    }
+                }
+                else if (command == "panels")
+                {
+                    foreach (var document in FindObjectsByType<UnityEngine.UIElements.UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    {
+                        var root = document.rootVisualElement;
+                        VrDiagnostics.Mark("toolkit document", document.name + ", active=" + document.isActiveAndEnabled + ", settings=" + document.panelSettings?.name + ", texture=" + document.panelSettings?.targetTexture?.name + ", attached=" + (root?.panel != null) + ", layout=" + root?.layout + ", opacity=" + root?.resolvedStyle.opacity);
+                        if (root != null)
+                            for (int i = 0; i < root.childCount; i++)
+                                VrDiagnostics.Mark("toolkit root child", root[i].name + ", layout=" + root[i].layout + ", display=" + root[i].resolvedStyle.display + ", opacity=" + root[i].resolvedStyle.opacity);
+                    }
+                    foreach (var panel in FindObjectsByType<MitaInteractionPanel>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    {
+                        VrDiagnostics.Mark("Mita panel", panel.name + ", active=" + panel.isActiveAndEnabled + ", actor=" + panel.CurrentActor?.name + ", position=" + panel.transform.position + ", scale=" + panel.transform.lossyScale);
+                        foreach (var group in panel.GetComponentsInParent<CanvasGroup>(true))
+                            VrDiagnostics.Mark("Mita panel group", group.name + ", alpha=" + group.alpha + ", input=" + group.interactable + ", blocks=" + group.blocksRaycasts);
+                    }
+                }
                 else if (command == "views")
                 {
                     VrDiagnostics.Mark("XR render state", "display=" + VrRuntime.XrDisplay?.running + ", renderPasses=" + VrRuntime.XrDisplay?.GetRenderPassCount());
@@ -100,7 +147,7 @@ namespace NeuroMita.VR
                         VrDiagnostics.Mark("view camera", camera.name + ", scene=" + camera.gameObject.scene.name + ", active=" + camera.isActiveAndEnabled + ", depth=" + camera.depth + ", stereoEnabled=" + camera.stereoEnabled + ", stereo=" + camera.stereoTargetEye + ", position=" + camera.transform.position + ", rotation=" + camera.transform.eulerAngles);
                     foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                     {
-                        VrDiagnostics.Mark("view canvas", canvas.name + ", scene=" + canvas.gameObject.scene.name + ", active=" + canvas.isActiveAndEnabled + ", mode=" + canvas.renderMode + ", order=" + canvas.sortingOrder + ", position=" + canvas.transform.position + ", scale=" + canvas.transform.lossyScale + ", root=" + canvas.isRootCanvas);
+                        VrDiagnostics.Mark("view canvas", canvas.name + ", scene=" + canvas.gameObject.scene.name + ", active=" + canvas.isActiveAndEnabled + ", mode=" + canvas.renderMode + ", layer=" + canvas.gameObject.layer + ", order=" + canvas.sortingOrder + ", position=" + canvas.transform.position + ", scale=" + canvas.transform.lossyScale + ", root=" + canvas.isRootCanvas);
                         if (!canvas.isActiveAndEnabled) continue;
                         foreach (var graphic in canvas.GetComponentsInChildren<UnityEngine.UI.Graphic>(false))
                             VrDiagnostics.Mark("view graphic", graphic.name + ", type=" + graphic.GetIl2CppType().FullName + ", enabled=" + graphic.enabled + ", alpha=" + graphic.color.a + ", raycast=" + graphic.raycastTarget + ", position=" + graphic.transform.position);
