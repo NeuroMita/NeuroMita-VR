@@ -37,6 +37,9 @@ namespace NeuroMita.VR
         }
 
         private readonly List<LightPlacement> lights = new();
+        private Camera camera;
+        private CameraClearFlags clearFlags;
+        private Color background;
 
         public static VrMenuStage Create(Camera camera)
         {
@@ -53,7 +56,12 @@ namespace NeuroMita.VR
             if (direction.sqrMagnitude < 0.0001f) direction = -camera.transform.forward;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.0001f) direction = Vector3.forward;
-            var stage = new VrMenuStage();
+            var stage = new VrMenuStage
+            {
+                camera = camera,
+                clearFlags = camera.clearFlags,
+                background = camera.backgroundColor
+            };
             foreach (var light in camera.GetComponentsInChildren<Light>(true))
             {
                 stage.lights.Add(new LightPlacement(light.transform));
@@ -66,8 +74,13 @@ namespace NeuroMita.VR
             return stage;
         }
 
-        public void HoldLights()
+        public void HoldPresentation()
         {
+            if (camera != null)
+            {
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = new Color(0.008f, 0.006f, 0.012f, 1f);
+            }
             foreach (var placement in lights)
                 if (placement.Light != null) placement.Light.SetPositionAndRotation(placement.WorldPosition, placement.WorldRotation);
         }
@@ -76,6 +89,12 @@ namespace NeuroMita.VR
         {
             foreach (var placement in lights) placement.Restore();
             lights.Clear();
+            if (camera != null)
+            {
+                camera.clearFlags = clearFlags;
+                camera.backgroundColor = background;
+                camera = null;
+            }
         }
     }
 }

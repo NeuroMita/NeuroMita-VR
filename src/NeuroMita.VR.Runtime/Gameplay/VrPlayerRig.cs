@@ -346,7 +346,7 @@ namespace NeuroMita.VR
             var position = AnchorPosition + rotation * VrPosePolicy.HeadOffset(headPosition, reference);
             position.y += (VrRuntime.Settings?.VrHeightOffset ?? 0) * 0.01f;
             eye.transform.SetPositionAndRotation(position, rotation * headRotation);
-            menuStage?.HoldLights();
+            menuStage?.HoldPresentation();
         }
 
         private bool ApplyHand(Transform target, XRNode node, Quaternion rotation)
