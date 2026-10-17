@@ -15,18 +15,18 @@ namespace NeuroMita.VR
         private readonly IDisposable photoExclusion;
         public Canvas Canvas { get; private set; }
 
-        public VrToolkitWorldPanel(UIDocument source, Transform parent, Camera eye, VrUiPresenter pointer)
+        public VrToolkitWorldPanel(UIDocument source, Transform parent, Camera eye, VrUiPresenter pointer, string title = "YouTube browser")
         {
             if (source == null || source.panelSettings == null) throw new ArgumentException("Toolkit document has no PanelSettings");
             document = source;
             original = source.panelSettings;
             settings = UnityEngine.Object.Instantiate(original);
-            settings.name = "VR TV panel settings";
+            settings.name = "VR " + title + " panel settings";
             texture = new RenderTexture(1600, 1000, 24, RenderTextureFormat.ARGB32);
-            texture.name = "VR TV UI";
+            texture.name = "VR " + title + " UI";
             try
             {
-                if (!texture.Create()) throw new InvalidOperationException("TV UI RenderTexture creation failed");
+                if (!texture.Create()) throw new InvalidOperationException(title + " RenderTexture creation failed");
                 settings.renderMode = PanelRenderMode.ScreenSpaceOverlay;
                 settings.targetTexture = texture;
                 settings.scaleMode = PanelScaleMode.ConstantPixelSize;
@@ -35,7 +35,7 @@ namespace NeuroMita.VR
                 settings.clearColor = true;
                 settings.colorClearValue = Color.clear;
                 source.panelSettings = settings;
-                var root = VrObject.Create("VR YouTube browser", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(RawImage));
+                var root = VrObject.Create("VR " + title, typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(RawImage));
                 Canvas = root.GetComponent<Canvas>();
                 root.transform.SetParent(parent, false);
                 Canvas.renderMode = RenderMode.WorldSpace;
@@ -45,7 +45,7 @@ namespace NeuroMita.VR
                 rect.sizeDelta = new Vector2(1600, 1000);
                 rect.localScale = Vector3.one * (1.4f / 1600f);
                 var facing = Quaternion.Euler(0f, eye.transform.eulerAngles.y, 0f);
-                rect.SetPositionAndRotation(eye.transform.position + facing * new Vector3(-0.4f, -0.1f, 1.3f), facing);
+                VrPanelPlacement.Place(rect, eye, eye.transform.position + facing * new Vector3(-0.4f, -0.1f, 1.3f), 1.4f);
                 root.GetComponent<RawImage>().texture = texture;
                 relay = root.AddComponent<VrToolkitInputRelay>();
                 relay.Bind(document, rect);

@@ -187,6 +187,7 @@ namespace NeuroMita.VR
             hud = gameObject.AddComponent<VrHudPresenter>();
             gameObject.AddComponent<VrPhonePresenter>();
             gameObject.AddComponent<VrRadioPresenter>();
+            gameObject.AddComponent<VrEaselPresenter>();
             contextActions = gameObject.AddComponent<VrContextActionsPresenter>();
             gameObject.AddComponent<VrTvPresenter>();
             settingsPanel = gameObject.AddComponent<VrSettingsPanel>();

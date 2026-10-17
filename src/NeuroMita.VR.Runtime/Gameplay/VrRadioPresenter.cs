@@ -73,7 +73,7 @@ namespace NeuroMita.VR
             var head = eye.transform;
             Vector3 anchor = VrHostViews.RadioAnchor(source) != null ? VrHostViews.RadioAnchor(source).position : head.position + head.forward;
             var facing = Quaternion.LookRotation((anchor - head.position).sqrMagnitude > 0.001f ? anchor - head.position : head.forward, Vector3.up);
-            Vector3 center = anchor + facing * new Vector3(0.6f, 0.2f, -0.1f);
+            Vector3 center = anchor + (head.position - anchor).normalized * 0.45f + Vector3.up * 0.18f;
             Vector3 direction = center - head.position;
             if (direction.magnitude > 1.8f || direction.magnitude < 0.65f || Vector3.Angle(head.forward, direction) > 55f)
             {
@@ -81,7 +81,7 @@ namespace NeuroMita.VR
                 center = head.position + upright * new Vector3(0.25f, -0.12f, 1.15f);
                 direction = center - head.position;
             }
-            rect.SetPositionAndRotation(center, Quaternion.LookRotation(direction.sqrMagnitude > 0.001f ? direction : head.forward, Vector3.up));
+            VrPanelPlacement.Place(rect, eye, center, 1.1f);
             root.GetComponent<RawImage>().texture = texture;
             relay = root.AddComponent<VrToolkitInputRelay>();
             relay.Bind(document, rect);
