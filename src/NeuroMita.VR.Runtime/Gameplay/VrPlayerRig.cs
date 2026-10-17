@@ -297,6 +297,12 @@ namespace NeuroMita.VR
                 return;
             }
             ApplyTrackedHeadPose(headPosition, headRotation);
+            if (menuPanelsPending)
+            {
+                menuPanelsPending = false;
+                VrRuntime.Presenter?.Recenter();
+                VrDiagnostics.Mark("menu panels recentered", "late menu stage");
+            }
             Quaternion rotation = AnchorRotation * Quaternion.Inverse(referenceYaw);
             leftTracked = ApplyHand(leftHand, XRNode.LeftHand, rotation);
             rightTracked = ApplyHand(rightHand, XRNode.RightHand, rotation);
@@ -305,6 +311,7 @@ namespace NeuroMita.VR
             RefreshItemMounts();
         }
 
+        private bool menuPanelsPending;
         private float nextMenuStage;
         private void TryCreateMenuStage()
         {
@@ -312,6 +319,7 @@ namespace NeuroMita.VR
             nextMenuStage = Time.unscaledTime + 0.25f;
             menuStage = VrMenuStage.Create(eye);
             if (menuStage == null) return;
+            menuPanelsPending = true;
             menuAnchor = eye.transform.position;
             menuRotation = Quaternion.Euler(0f, eye.transform.eulerAngles.y, 0f);
             calibrated = false;

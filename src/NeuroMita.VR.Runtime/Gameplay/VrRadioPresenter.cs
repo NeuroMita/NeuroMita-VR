@@ -81,6 +81,7 @@ namespace NeuroMita.VR
             relay.Bind(document, rect);
             photoExclusion = VrHostLease.Wrap(NeuroMita.Player.PlayerSelfieController.ExcludeCanvasFromPhotos(canvas));
             pointer?.RegisterWorldCanvas(canvas);
+            VrDiagnostics.Mark("radio panel bound", "position=" + rect.position + ", document=" + document.name + ", panel=" + (document.rootVisualElement?.panel != null));
         }
 
         private void Release()

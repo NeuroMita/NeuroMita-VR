@@ -36,19 +36,8 @@ public sealed class Plugin : BasePlugin
             if (!Equals(runtime.GetProperty("RuntimeBackend")?.GetValue(null), "IL2CPP"))
                 throw new InvalidOperationException("Runtime module was not compiled against IL2CPP interop assemblies.");
             ConfigureSettings(module);
-            var ui = Assembly.Load("UnityEngine.UI");
             foreach (var type in module.GetTypes().Where(IsUnityBehaviour))
-            {
-                if (type.FullName == "NeuroMita.VR.VrToolkitInputRelay")
-                {
-                    var names = new[] { "IPointerDownHandler", "IPointerUpHandler", "IPointerMoveHandler", "IScrollHandler", "IBeginDragHandler", "IDragHandler", "IPointerEnterHandler", "IPointerExitHandler" };
-                    ClassInjector.RegisterTypeInIl2Cpp(type, new RegisterTypeOptions
-                    {
-                        Interfaces = names.Select(name => ui.GetType("UnityEngine.EventSystems." + name, true)!).ToArray()
-                    });
-                }
-                else ClassInjector.RegisterTypeInIl2Cpp(type);
-            }
+                ClassInjector.RegisterTypeInIl2Cpp(type);
             bootstrap = module.GetType("NeuroMita.VR.VrExternalBootstrap", true)!;
             bootstrap.GetMethod("Schedule")!.Invoke(null, null);
             started = true;
@@ -72,21 +61,25 @@ public sealed class Plugin : BasePlugin
     {
         var type = module.GetType("NeuroMita.VR.VrSettings", true)!;
         object settings = type.GetProperty("Current")!.GetValue(null)!;
+        var writers = new System.Collections.Generic.Dictionary<string, Action>();
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.CanWrite))
         {
             if (property.PropertyType == typeof(int))
             {
                 var entry = Config.Bind("VR", property.Name, (int)property.GetValue(settings)!, "VR runtime preference");
                 property.SetValue(settings, entry.Value);
+                writers[property.Name] = () => entry.BoxedValue = property.GetValue(settings);
                 entry.SettingChanged += (_, _) => property.SetValue(settings, entry.Value);
             }
             else if (property.PropertyType == typeof(bool))
             {
                 var entry = Config.Bind("VR", property.Name, (bool)property.GetValue(settings)!, "VR runtime preference");
                 property.SetValue(settings, entry.Value);
+                writers[property.Name] = () => entry.BoxedValue = property.GetValue(settings);
                 entry.SettingChanged += (_, _) => property.SetValue(settings, entry.Value);
             }
         }
+        type.GetProperty("PersistChange")!.SetValue(null, new Action<string>(name => { if (writers.TryGetValue(name, out var write)) write(); }));
     }
 
     public override bool Unload()

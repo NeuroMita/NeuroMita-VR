@@ -2,6 +2,7 @@ namespace NeuroMita.VR
 {
     public sealed class VrSettings
     {
+        public static System.Action<string> PersistChange { get; set; }
         public static VrSettings Current { get; set; } = new VrSettings();
         public int VrSmoothTurnRateDegreesPerSecond { get; set; } = 90;
         public int VrTurnMode { get; set; } = 0;

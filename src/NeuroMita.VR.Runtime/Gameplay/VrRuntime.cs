@@ -21,6 +21,8 @@ namespace NeuroMita.VR
         private int inputFrame = -1;
         private IDisposable inputRegistration;
         private string controlSession;
+        private VrSettingsPanel settingsPanel;
+        private VrGamesPresenter games;
         private VrGraphicsPresenter graphics;
         private VrHudPresenter hud;
         private VrContextActionsPresenter contextActions;
@@ -187,6 +189,8 @@ namespace NeuroMita.VR
             gameObject.AddComponent<VrRadioPresenter>();
             contextActions = gameObject.AddComponent<VrContextActionsPresenter>();
             gameObject.AddComponent<VrTvPresenter>();
+            settingsPanel = gameObject.AddComponent<VrSettingsPanel>();
+            games = gameObject.AddComponent<VrGamesPresenter>();
             gameObject.AddComponent<VrHotbarPresenter>();
             VrEarlyInputLoop.Install();
             initialized = true;
@@ -273,7 +277,23 @@ namespace NeuroMita.VR
                 down |= 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
                 VrDebugControl.PauseRequested = false;
             }
-            Vector2 movement = Input.Move;
+            ulong pauseBit = 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
+            if ((down & pauseBit) != 0 && (settingsPanel?.ClosePage() == true || games?.CloseActive() == true))
+            {
+                held &= ~pauseBit;
+                down &= ~pauseBit;
+                up &= ~pauseBit;
+            }
+            bool gameplay = rig?.Player != null && rig.Player.gameObject.activeInHierarchy;
+            if (!gameplay)
+            {
+                ulong menuActions = 1UL << (int)NeuroMita.Modding.ExternalInputAction.Click;
+                if (AppServices.GetOrNull<UIManager>()?.CanGoBack == true) menuActions |= pauseBit;
+                held &= menuActions;
+                down &= menuActions;
+                up &= menuActions;
+            }
+            Vector2 movement = gameplay ? Input.Move : Vector2.zero;
             VrDiagnostics.Controls(rig, held, down, movement);
             Vector2 pointer = Presenter != null ? Presenter.PointerPosition : Vector2.zero;
             if (!TryMaintainControlSession() || !NeuroMita.Modding.ExternalControlBridge.SetInput(controlSession, held, down, up,

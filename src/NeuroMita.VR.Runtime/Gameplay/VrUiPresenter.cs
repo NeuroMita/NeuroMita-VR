@@ -420,23 +420,23 @@ namespace NeuroMita.VR
             pointer.position = chosenPosition;
             pointer.pointerCurrentRaycast = chosen;
             var target = chosen.gameObject;
-            var scroll = target != null ? ExecuteEvents.GetEventHandler<IScrollHandler>(target) : null;
+            var scroll = target != null ? VrUiDispatch.GetEventHandler<IScrollHandler>(target) : null;
             float scrollAxis = VrRuntime.Input.Turn.y;
             if (scroll != null && Mathf.Abs(scrollAxis) > 0.2f)
             {
                 pointer.scrollDelta = new Vector2(0f, scrollAxis * Time.unscaledDeltaTime * 20f);
-                ExecuteEvents.Execute(scroll, pointer, ExecuteEvents.scrollHandler);
+                VrUiDispatch.Execute(scroll, pointer, ExecuteEvents.scrollHandler);
             }
             if (hover != target)
             {
-                if (hover != null) ExecuteEvents.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
+                if (hover != null) VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
                 hover = target;
                 pointer.pointerEnter = hover;
-                if (hover != null) ExecuteEvents.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerEnterHandler);
+                if (hover != null) VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerEnterHandler);
                 if (hover != null) SendUiHaptic(0.12f, 0.025f);
             }
             if (hover != null && pointer.delta.sqrMagnitude > 0f)
-                ExecuteEvents.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerMoveHandler);
+                VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerMoveHandler);
             bool primary = VrRuntime.Input.PointerPrimaryHeld;
             bool secondary = VrRuntime.Input.PointerSecondaryHeld;
             bool held = rig.HeadTracked && rig.PointerHandTracked && (primary || secondary);
@@ -448,14 +448,14 @@ namespace NeuroMita.VR
                 pointer.eligibleForClick = true;
                 SendUiHaptic(0.22f, 0.035f);
                 VrRuntime.Keyboard?.PreserveSelection();
-                press = ExecuteEvents.ExecuteHierarchy(target, pointer, ExecuteEvents.pointerDownHandler);
-                if (press == null) press = ExecuteEvents.GetEventHandler<IPointerClickHandler>(target);
+                press = VrUiDispatch.ExecuteHierarchy(target, pointer, ExecuteEvents.pointerDownHandler);
+                if (press == null) press = VrUiDispatch.GetEventHandler<IPointerClickHandler>(target);
                 pointer.pointerPress = press;
                 pointer.rawPointerPress = target;
                 if (VrRuntime.Keyboard?.Owns(press) != true) eventSystem.SetSelectedGameObject(press, pointer);
-                drag = pointer.button == PointerEventData.InputButton.Left ? ExecuteEvents.GetEventHandler<IDragHandler>(target) : null;
+                drag = pointer.button == PointerEventData.InputButton.Left ? VrUiDispatch.GetEventHandler<IDragHandler>(target) : null;
                 pointer.pointerDrag = drag;
-                if (drag != null) ExecuteEvents.Execute(drag, pointer, ExecuteEvents.initializePotentialDrag);
+                if (drag != null) VrUiDispatch.Execute(drag, pointer, ExecuteEvents.initializePotentialDrag);
             }
             if (held && drag != null && pointer.delta.sqrMagnitude > 0f)
             {
@@ -463,9 +463,9 @@ namespace NeuroMita.VR
                 {
                     pointer.dragging = true;
                     pointer.eligibleForClick = false;
-                    ExecuteEvents.Execute(drag, pointer, ExecuteEvents.beginDragHandler);
+                    VrUiDispatch.Execute(drag, pointer, ExecuteEvents.beginDragHandler);
                 }
-                if (pointer.dragging) ExecuteEvents.Execute(drag, pointer, ExecuteEvents.dragHandler);
+                if (pointer.dragging) VrUiDispatch.Execute(drag, pointer, ExecuteEvents.dragHandler);
             }
             if (!held && lastHeld) ReleasePress(target);
             lastHeld = held;
@@ -504,14 +504,14 @@ namespace NeuroMita.VR
         private void ReleasePress(GameObject target)
         {
             if (pointer == null) return;
-            if (press != null) ExecuteEvents.Execute(press, pointer, ExecuteEvents.pointerUpHandler);
+            if (press != null) VrUiDispatch.Execute(press, pointer, ExecuteEvents.pointerUpHandler);
             if (pointer.dragging && drag != null)
             {
-                if (target != null) ExecuteEvents.ExecuteHierarchy(target, pointer, ExecuteEvents.dropHandler);
-                ExecuteEvents.Execute(drag, pointer, ExecuteEvents.endDragHandler);
+                if (target != null) VrUiDispatch.ExecuteHierarchy(target, pointer, ExecuteEvents.dropHandler);
+                VrUiDispatch.Execute(drag, pointer, ExecuteEvents.endDragHandler);
             }
-            else if (pointer.eligibleForClick && press != null && press == ExecuteEvents.GetEventHandler<IPointerClickHandler>(target))
-                ExecuteEvents.Execute(press, pointer, ExecuteEvents.pointerClickHandler);
+            else if (pointer.eligibleForClick && press != null && press == VrUiDispatch.GetEventHandler<IPointerClickHandler>(target))
+                VrUiDispatch.Execute(press, pointer, ExecuteEvents.pointerClickHandler);
             pointer.pointerPress = null;
             pointer.pointerDrag = null;
             pointer.dragging = false;
@@ -522,7 +522,7 @@ namespace NeuroMita.VR
         private void Release()
         {
             ReleasePress(null);
-            if (hover != null && pointer != null) ExecuteEvents.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
+            if (hover != null && pointer != null) VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
             hover = null;
             lastHeld = false;
         }
