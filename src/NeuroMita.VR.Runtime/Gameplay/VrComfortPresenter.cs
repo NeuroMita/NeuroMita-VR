@@ -23,7 +23,7 @@ namespace NeuroMita.VR
     {
         private static readonly int VignetteId = Shader.PropertyToID("_Vignette");
         private static readonly int FadeId = Shader.PropertyToID("_Fade");
-        private readonly Collider[] overlaps = new Collider[128];
+        private readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<Collider> overlaps = new(128);
         private readonly Stack<bool> visibility = new();
         private VrPlayerRig rig;
         private Camera eye;

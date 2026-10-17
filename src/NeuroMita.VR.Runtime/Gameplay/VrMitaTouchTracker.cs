@@ -10,7 +10,7 @@ namespace NeuroMita.VR
 #endif
     public sealed partial class VrMitaTouchTracker : MonoBehaviour
     {
-        private readonly Collider[] hits = new Collider[64];
+        private readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<Collider> hits = new(64);
         private readonly Dictionary<MitaActor, VrTouchSession> sessions = new();
         private readonly Dictionary<MitaActor, bool> contacts = new();
         private readonly List<MitaActor> expired = new();

@@ -20,7 +20,7 @@ namespace NeuroMita.VR
         private Vector3 physicsPosition;
         private Quaternion physicsRotation;
         private readonly RaycastHit[] sweepHits = new RaycastHit[128];
-        private readonly Collider[] overlaps = new Collider[128];
+        private readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<Collider> overlaps = new(128);
         private const float WallSkin = 0.002f;
         private float contactResumeTime;
         public bool ContactAvailable => tracked && palm != null && palm.enabled && Time.time >= contactResumeTime;
@@ -163,7 +163,7 @@ namespace NeuroMita.VR
             {
                 float distance = remaining.magnitude;
                 Vector3 direction = remaining / distance;
-                int count = Physics.BoxCastNonAlloc(position + rotation * palm.center,
+                int count = VrPhysicsQueries.BoxCastNonAlloc(position + rotation * palm.center,
                     palm.size * 0.5f, direction, sweepHits, rotation, distance + WallSkin,
                     Physics.AllLayers, QueryTriggerInteraction.Ignore);
                 if (count == sweepHits.Length) break;
