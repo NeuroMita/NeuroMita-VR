@@ -69,8 +69,8 @@ namespace NeuroMita.VR
             var inventory = AppServices.GetOrNull<UIManager>()?.CurrentGameUIRoot?.GetComponentInChildren<InventoryFullUI>(true);
             if (!gameplay || (inventory != null && inventory.isInventoryOpen)) { Hide(); return; }
 
-            handPanel ??= CreatePanel("VR held item actions");
-            worldPanel ??= CreatePanel("VR world actions");
+            if (handPanel?.Canvas == null) { Release(handPanel); handPanel = CreatePanel("VR held item actions"); }
+            if (worldPanel?.Canvas == null) { Release(worldPanel); worldPanel = CreatePanel("VR world actions"); }
             handPanel.Count = worldPanel.Count = 0;
             var hints = VrHostViews.ItemHints(player.ItemActions);
             var target = player.Interaction?.HoveredInteractable?.TryCast<WorldInteractionTarget>();
@@ -136,9 +136,10 @@ namespace NeuroMita.VR
 
         public Ray ResolveInteractionRay(Ray pointerRay, VrUiPresenter pointer)
         {
-            if (worldTarget == null || !worldTarget.activeInHierarchy || worldPanel == null
-                || worldPanel.Count == 0 || !worldPanel.Canvas.gameObject.activeInHierarchy
-                || pointer == null || !pointer.IsPointingAt(worldPanel.Canvas))
+            var canvas = worldPanel?.Canvas;
+            if (worldTarget == null || !worldTarget.activeInHierarchy || worldPanel == null || canvas == null
+                || worldPanel.Count == 0 || !canvas.gameObject.activeInHierarchy
+                || pointer == null || !pointer.IsPointingAt(canvas))
                 return pointerRay;
             Vector3 direction = worldAnchor - pointerRay.origin;
             return direction.sqrMagnitude > 0.0001f ? new Ray(pointerRay.origin, direction.normalized) : pointerRay;
