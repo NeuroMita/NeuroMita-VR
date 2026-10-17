@@ -11,6 +11,7 @@ $repoRoot = Split-Path $PSScriptRoot -Parent
 $dotnet = Join-Path $repoRoot '.tools/dotnet/dotnet.exe'
 if (!(Test-Path -LiteralPath $dotnet)) { $dotnet = (Get-Command dotnet -ErrorAction Stop).Source }
 if (!$AssetBundle -and $UnityProject) { $AssetBundle = Join-Path $UnityProject 'Temp/VrModAssets/neuromita-vr-assets' }
+if (!$AssetBundle) { $AssetBundle = Join-Path $repoRoot 'assets/prebuilt/neuromita-vr-assets' }
 if (!$AssetBundle -or !(Test-Path -LiteralPath $AssetBundle -PathType Leaf)) { throw 'Pass -AssetBundle for the prebuilt VR bundle. This script never starts Unity.' }
 $bundle = (Resolve-Path -LiteralPath $AssetBundle).Path
 if (!$OpenXRPackage -and $UnityProject) {
@@ -39,6 +40,7 @@ foreach ($project in @('NeuroMitaVRmod','NeuroMita.VR.Runtime')) {
     Copy-Item -LiteralPath (Join-Path $repoRoot "src/$project/bin/Release/net6.0/$project.dll") -Destination $plugins
 }
 Copy-Item -LiteralPath $bundle -Destination $plugins
+Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/source-provenance.md') -Destination (Join-Path $staging 'SOURCE_PROVENANCE.md')
 Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/gameplay-package.md') -Destination (Join-Path $staging 'README.md')
 Copy-Item -LiteralPath (Join-Path $repoRoot 'tools/Start-VrMod.ps1') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE'),(Join-Path $repoRoot 'THIRD_PARTY_NOTICES.md') -Destination $staging

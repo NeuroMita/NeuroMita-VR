@@ -1,0 +1,62 @@
+{
+  "bundle": "neuromita-vr-assets",
+  "sizeBytes": 163502,
+  "sha256": "c7beb8c03e19e3a9b3aeb53667a46e4fed2466779a332004c0a34cde186b03d4",
+  "origin": "Installed validation mod bundle, not rebuilt with the new asset project",
+  "unityVersion": "6000.3.12f1",
+  "sourceRevision": "b89701b7de272970427565cb78c4a27606911e13",
+  "target": "StandaloneWindows64",
+  "sourceFiles": [
+    {
+      "origin": "Assets/XR/Resources/NeuroMitaVrRightHand.asset",
+      "path": "source/Assets/NeuroMitaVR/Meshes/NeuroMitaVrRightHand.asset",
+      "sha256": "c93fe0e899028c290bcd08d56aa7a4d4637d8a8a28519be7f67d8666b973e918"
+    },
+    {
+      "origin": "Assets/XR/Resources/NeuroMitaVrRightHand.asset.meta",
+      "path": "source/Assets/NeuroMitaVR/Meshes/NeuroMitaVrRightHand.asset.meta",
+      "sha256": "dbf806c265485c39b571f7fbc03761be7cfe785b54dbeb12a817b5271dcd64a7"
+    },
+    {
+      "origin": "Assets/XR/Resources/NeuroMitaVrLeftHand.asset",
+      "path": "source/Assets/NeuroMitaVR/Meshes/NeuroMitaVrLeftHand.asset",
+      "sha256": "4861dce19341e2f503cd765c20d3da8ee72ad5714448c8727c7252350ff3f6bb"
+    },
+    {
+      "origin": "Assets/XR/Resources/NeuroMitaVrLeftHand.asset.meta",
+      "path": "source/Assets/NeuroMitaVR/Meshes/NeuroMitaVrLeftHand.asset.meta",
+      "sha256": "b2880b6690ffc411d51a6bb22871bda0871e3660ec72acc9ee0dfce7a728add9"
+    },
+    {
+      "origin": "Assets/Shader/NeuroMitaVrComfort.shader",
+      "path": "source/Assets/NeuroMitaVR/Shaders/NeuroMitaVrComfort.shader",
+      "sha256": "3c0172cc49c0baf0ae0e29495c1812164aa202a2bb7a9b4dcc506d2144a7dba6"
+    },
+    {
+      "origin": "Assets/Shader/NeuroMitaVrComfort.shader.meta",
+      "path": "source/Assets/NeuroMitaVR/Shaders/NeuroMitaVrComfort.shader.meta",
+      "sha256": "437d7a0f5c3a4f102cf50b5e08772aadd366b5b6739070958051dd2724369d62"
+    },
+    {
+      "origin": "Assets/XR/Resources/NeuroMitaVrPointer.mat",
+      "path": "source/Assets/NeuroMitaVR/Materials/NeuroMitaVrPointer.mat",
+      "sha256": "9b8ce6413a7f6a53988d06d1f649a6a807fe89805cd400b9f576aa491966a9e2"
+    },
+    {
+      "origin": "Assets/XR/Resources/NeuroMitaVrPointer.mat.meta",
+      "path": "source/Assets/NeuroMitaVR/Materials/NeuroMitaVrPointer.mat.meta",
+      "sha256": "86b514d58f72f782da3993fe7c77f7de9ce6d1c1e44a91b9b75203e1d23f57f2"
+    },
+    {
+      "origin": "Assets/Resources/NeuroMitaVrComfort.mat",
+      "path": "source/Assets/NeuroMitaVR/Materials/NeuroMitaVrComfort.mat",
+      "sha256": "8fc9ac954ff9c8c76e3d14a3fd49bf714956e0fc4d4951b3f74eaccbf844f5c8"
+    },
+    {
+      "origin": "Assets/Resources/NeuroMitaVrComfort.mat.meta",
+      "path": "source/Assets/NeuroMitaVR/Materials/NeuroMitaVrComfort.mat.meta",
+      "sha256": "aa43979ea5c681a26d2e357e32cebe562fc60dea20e91e21c864e9b0a8065802"
+    }
+  ],
+  "assetProjectBuildVerified": false
+}

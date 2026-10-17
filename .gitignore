@@ -44,3 +44,18 @@ Thumbs.db
 *.snk
 *.pem
 **/secrets.json
+
+# Standalone resource project: keep authored assets, exclude editor caches
+/assets/source/Library/
+/assets/source/Temp/
+/assets/source/Obj/
+/assets/source/Logs/
+/assets/source/UserSettings/
+/assets/source/.vs/
+/assets/source/*.csproj
+/assets/source/*.sln
+/assets/source/Packages/packages-lock.json
+/assets/prebuilt/*.manifest
+/assets/prebuilt/prebuilt
+/assets/prebuilt/prebuilt.meta
+/assets/prebuilt/prebuilt.manifest

@@ -1,0 +1,3 @@
+# Preserve resource provenance hashes across Git checkouts.
+assets/source/** -text
+assets/prebuilt/neuromita-vr-assets binary

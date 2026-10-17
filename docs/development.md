@@ -13,13 +13,13 @@ Runtime мода самостоятелен: Gameplay, injection и native OpenX
 
 Аудит ищет достижимые Method unstripping failed stubs, неразрешённые ссылки и отсутствующие native exports. Глубина транзитивных вызовов ограничена шестью; reflection, реальное поведение Unity bindings и корректность ABI он полностью не доказывает. Это дополнительная проверка, не замена игровому запуску.
 
-Для игрового ZIP требуются отдельно уже собранный neuromita-vr-assets и официальный пакет Unity OpenXR 1.16.1:
+Для игрового ZIP используется assets/prebuilt/neuromita-vr-assets из репозитория; отдельно нужен официальный пакет Unity OpenXR 1.16.1:
 
-    .\tools\Package-VrMod.ps1 -HostDirectory 'D:\Games\NeuroMita-Test' -AssetBundle 'D:\Artifacts\neuromita-vr-assets' -OpenXRPackage 'D:\Dependencies\com.unity.xr.openxr'
+    .\tools\Package-VrMod.ps1 -HostDirectory 'D:\Games\NeuroMita-Test' -OpenXRPackage 'D:\Dependencies\com.unity.xr.openxr'
 
-Скрипт не запускает Unity и не меняет установленный host. По-прежнему можно передать -UnityProject для поиска уже имеющихся Temp/VrModAssets и Library/PackageCache; это только источник артефактов, не C#-зависимость. Пока bundle сам не поддерживается отдельным asset-проектом, его можно пересобрать в полигоне через Unity MCP: return NeuroMita.VR.Editor.VrModAssetBuild.Build();. Такой вызов требует разрешения на Unity-операции и в текущий статический проход не выполнялся.
+Скрипт не запускает Unity и не меняет установленный host. Можно переопределить bundle параметром -AssetBundle или передать -UnityProject для поиска Temp/VrModAssets и Library/PackageCache. Исходники ресурсов и отдельный Unity-проект находятся в assets/source; пересборка описана в assets/README.md.
 
-Игра, BepInEx и interop в ZIP не включаются. Receipt содержит ревизию самого мода и признак незакоммиченных исходников. Игровой пакет требует ручной приёмки в шлеме; сейчас запуск ожидает отдельного разрешения пользователя.
+Игра, BepInEx и interop в ZIP не включаются. Receipt содержит ревизию самого мода и признак незакоммиченных исходников. Игровой пакет требует ручной приёмки в шлеме; сборка/static audit не заменяют проверку в шлеме.
 
 SDK, host, interop, bin/obj/dist, архивы, env/private настройки и сырые логи остаются вне Git. Происхождение Gameplay-компонентов описано в source-provenance.md.
 Повтор всего статического набора: .\tools\Test-Static.ps1 -HostDirectory 'D:\Games\NeuroMita-Test'. Запуск игры в этот скрипт не включён.

@@ -12,6 +12,6 @@ Bootstrap по умолчанию включает VR и через нескол
 
 Базовая раскладка Touch: левый стик — движение, правый — поворот; правый trigger — указатель, grip — взаимодействие; A — прыжок/подтверждение чата, B — radial menu; X — чат, Y — пауза; левый trigger — инвентарь, grip — микрофон. Одновременное удержание обоих стиков — recenter. Раскладка перенесена из Unity-runtime; физические нажатия во внешнем моде ещё предстоит принять.
 
-Пакет содержит bootstrap DLL, runtime DLL, AssetBundle, нативные UnityOpenXR/openxr_loader и subsystem manifest. Игра, BepInEx и generated interop в ZIP не входят. Уведомления Unity OpenXR сохранены в Notices. Перед публичной раздачей ресурсов из Unity-проекта отдельно проверьте права на них: MIT собственных адаптеров их не перелицензирует.
+Пакет содержит bootstrap DLL, runtime DLL, AssetBundle, нативные UnityOpenXR/openxr_loader и subsystem manifest. Игра, BepInEx и generated interop в ZIP не входят. Уведомления Unity OpenXR сохранены в Notices. Перед публичной раздачей ресурсов из Unity-проекта отдельно проверьте права на них: лицензия кода NeuroMita их не перелицензирует; SOURCE_PROVENANCE.md включён в пакет.
 
 Ограничения: нет полной проверки house/паузы/смартфона/радио в шлеме через мод; native controller profile пока только Oculus Touch. Старый API-only host не предоставляет новые TV HUD suppression hooks. Подписка tracking-origin notifications исправлена статически через native delegate field; проверка в игре ещё не выполнена. Ручной recenter остаётся доступным.
