@@ -112,7 +112,7 @@ namespace NeuroMita.VR
         private void UpdateVisual()
         {
             if (visual == null) return;
-            visual.enabled = tracked && target != null && VrAvatarPolicy.ShowIsolatedHands(VrRuntime.Settings?.VrAvatarMode ?? 0);
+            visual.enabled = !VrTvPresenter.IsViewing && tracked && target != null && VrAvatarPolicy.ShowIsolatedHands(VrRuntime.Settings?.VrAvatarMode ?? 0);
             if (visual.enabled)
             {
                 ResolvePose();
@@ -241,7 +241,7 @@ namespace NeuroMita.VR
         {
             if (visual == null) return;
             cameraVisibility.Push(visual.enabled);
-            visual.enabled = tracked && target != null && VrAvatarPolicy.ShowIsolatedHands(VrRuntime.Settings?.VrAvatarMode ?? 0) && (eye == null || camera == eye);
+            visual.enabled = !VrTvPresenter.IsViewing && tracked && target != null && VrAvatarPolicy.ShowIsolatedHands(VrRuntime.Settings?.VrAvatarMode ?? 0) && (eye == null || camera == eye);
         }
 
         private void AfterCamera(Camera camera)

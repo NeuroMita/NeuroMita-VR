@@ -54,6 +54,9 @@ namespace NeuroMita.VR
         private LineRenderer laser;
         private Material laserMaterial;
         private bool lastHeld;
+        private Vector3 pressWorld;
+        private readonly VrConsolePresentation consolePresentation = new();
+        internal bool IsPointingAtToolkit => hover != null && hover.GetComponentInParent<VrToolkitInputRelay>() != null;
         private bool waitForPointerRelease;
         private bool pointerLeft, pointerPreferenceSet;
         private Vector2 screenPosition;
@@ -305,6 +308,7 @@ namespace NeuroMita.VR
         {
             if (rig == null || rig.Eye == null) return;
             RefreshPauseVisibility(FindPauseCanvas());
+            consolePresentation.Refresh();
             var settings = VrRuntime.Settings;
             int distanceSetting = settings?.VrUiDistance ?? 150;
             int heightSetting = settings?.VrUiHeight ?? 0;
@@ -323,7 +327,9 @@ namespace NeuroMita.VR
                 {
                     ApplyScale(panel);
                     int follow = VrRuntime.Settings?.VrUiFollow ?? 1;
-                    if (panel.backdrop) follow = 0;
+                    bool console = VrConsolePresentation.IsOpen && (panel.canvas.GetComponentInChildren<ConsoleInterface>(true) != null ||
+                        panel.canvas.GetComponentInParent<ConsoleInterface>() != null);
+                    if (panel.backdrop || console) follow = 0;
                     if (follow != 2 && panel.canvas.GetComponent<NeuroMita.Menu.MenuUIRoot>() != null)
                         follow = 0;
                     var eye = rig.Eye.transform;
@@ -449,6 +455,7 @@ namespace NeuroMita.VR
             if (held && !lastHeld && target != null)
             {
                 pointer.button = secondary && !primary ? PointerEventData.InputButton.Right : PointerEventData.InputButton.Left;
+                pressWorld = end;
                 pointer.pressPosition = pointer.position;
                 pointer.pointerPressRaycast = chosen;
                 pointer.eligibleForClick = true;
@@ -462,10 +469,11 @@ namespace NeuroMita.VR
                 drag = pointer.button == PointerEventData.InputButton.Left ? VrUiDispatch.GetEventHandler<IDragHandler>(target) : null;
                 pointer.pointerDrag = drag;
                 if (drag != null) VrUiDispatch.Execute(drag, pointer, ExecuteEvents.initializePotentialDrag);
+                VrDiagnostics.Mark("UI press", "target=" + target.name + ", handler=" + press?.name + ", drag=" + drag?.name + ", position=" + end);
             }
             if (held && drag != null && pointer.delta.sqrMagnitude > 0f)
             {
-                if (!pointer.dragging && (pointer.position - pointer.pressPosition).sqrMagnitude > 16f)
+                if (!pointer.dragging && (end - pressWorld).sqrMagnitude > 0.000225f)
                 {
                     pointer.dragging = true;
                     pointer.eligibleForClick = false;
@@ -481,6 +489,7 @@ namespace NeuroMita.VR
                 laser.enabled = rig.PointerHandTracked && showPointer;
                 laser.SetPosition(0, ray.origin);
                 laser.SetPosition(1, end);
+                ShowHitMarker(target != null && showPointer, end, ray, held);
             }
         }
 
@@ -511,6 +520,7 @@ namespace NeuroMita.VR
         private void ReleasePress(GameObject target)
         {
             if (pointer == null) return;
+            if (press != null) VrDiagnostics.Mark("UI release", "handler=" + press.name + ", target=" + target?.name + ", eligible=" + pointer.eligibleForClick + ", dragging=" + pointer.dragging);
             if (press != null) VrUiDispatch.Execute(press, pointer, ExecuteEvents.pointerUpHandler);
             if (pointer.dragging && drag != null)
             {
@@ -533,6 +543,7 @@ namespace NeuroMita.VR
             VrInventoryDrag.Cancel();
             if (hover != null && pointer != null) VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
             hover = null;
+            ShowHitMarker(false, default, default, false);
             lastHeld = false;
         }
 
@@ -542,6 +553,7 @@ namespace NeuroMita.VR
             Release();
             waitForPointerRelease = true;
             if (laser != null) laser.enabled = false;
+            ShowHitMarker(false, default, default, false);
         }
 
         public void Restore()
@@ -567,6 +579,8 @@ namespace NeuroMita.VR
             }
             panels.Clear();
             ReleasePauseBackdrop();
+            ReleaseHitMarker();
+            consolePresentation.Dispose();
             if (laserMaterial != null)
             {
                 if (Application.isPlaying) Destroy(laserMaterial);

@@ -52,7 +52,7 @@ namespace NeuroMita.VR
                 Vector3 center = easel.canvasQuad != null ? easel.canvasQuad.bounds.center : easel.transform.position + Vector3.up;
                 Vector3 direction = Vector3.ProjectOnPlane(center - eye.position, Vector3.up);
                 var facing = direction.sqrMagnitude > 0.001f ? Quaternion.LookRotation(direction, Vector3.up) : Quaternion.Euler(0f, eye.eulerAngles.y, 0f);
-                easelPanel.Place(rig.Eye, eye.position + facing * new Vector3(-0.65f, -0.05f, 0.9f), 0.8f);
+                easelPanel.Place(rig.Eye, eye.position + facing * new Vector3(-0.65f, 0.1f, 0.9f), 0.8f);
                 placedEye = eye.position;
             }
         }

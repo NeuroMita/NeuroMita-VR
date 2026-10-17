@@ -1,179 +1,116 @@
 using System.Collections.Generic;
-using NeuroMita.Menu;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 namespace NeuroMita.VR
 {
-#if !NEUROMITA_VR_IL2CPP
-    [DefaultExecutionOrder(10025)]
-#endif
     public sealed partial class VrTvPresenter : MonoBehaviour
     {
-        private Canvas canvas;
-        private VrToolkitWorldPanel browser;
-        private UnityEngine.UIElements.UIDocument browserDocument;
-        private System.IDisposable photoExclusion;
-        private RectTransform panel;
-        private TVUIController controller;
-        private TVInteractionController interaction;
-        private int revision = -1;
-        private float nextDiscovery;
-        private Vector3 placedEye;
-        private float placedYaw;
-        private bool externalCamera;
-        private readonly List<Text> labels = new();
-        private readonly List<Button> buttons = new();
+        private readonly Dictionary<TVUIController, VrToolkitWorldPanel> screens = new();
+        private readonly List<TVUIController> stale = new();
         private TVUIController[] candidates = System.Array.Empty<TVUIController>();
+        private readonly Dictionary<Renderer, bool> hiddenItems = new();
+        private float nextDiscovery;
+        internal static bool IsViewing { get; private set; }
 
         private void LateUpdate()
         {
-            if (Time.unscaledTime >= nextDiscovery)
+            var rig = VrRuntime.Rig;
+            if (!VrRuntime.IsActive || rig?.Eye == null) { Release(); return; }
+            bool discover = Time.unscaledTime >= nextDiscovery;
+            if (discover)
             {
                 nextDiscovery = Time.unscaledTime + 0.5f;
                 candidates = FindObjectsByType<TVUIController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             }
-            TVUIController current = null;
-            foreach (var candidate in candidates)
+            IsViewing = false;
+            foreach (var controller in candidates)
             {
-                if (candidate == null || !candidate.isActiveAndEnabled) continue;
-                var owner = candidate.GetComponentInParent<TVInteractionController>();
-                if (owner != null && owner.IsViewActive) { current = candidate; break; }
-            }
-            Refresh(current, VrRuntime.Rig, VrRuntime.Presenter);
-        }
-
-        public void Refresh(TVUIController current, VrPlayerRig rig, VrUiPresenter pointer)
-        {
-            var owner = current != null ? current.GetComponentInParent<TVInteractionController>() : null;
-            var ui = AppServices.GetOrNull<UIManager>();
-            bool visible = current != null && current.isActiveAndEnabled && owner != null && owner.IsViewActive &&
-                rig?.Eye != null && Time.timeScale > 0f &&
-                (ui == null || ui.FocusedType == null || ui.FocusedType?.FullName == typeof(TVInputContext).FullName || ui.FocusedType?.FullName == typeof(TypingBlocker).FullName);
-            if (!visible)
-            {
-                if (canvas != null) canvas.gameObject.SetActive(false);
-                browser?.Dispose();
-                browser = null;
-                browserDocument = null;
-                controller = null;
-                interaction = null;
-                return;
-            }
-            bool opening = controller != current || canvas == null || !canvas.gameObject.activeSelf;
-            controller = current;
-            interaction = owner;
-            EnsureCanvas(pointer);
-            canvas.gameObject.SetActive(true);
-            canvas.worldCamera = rig.Eye;
-            var document = current.view != null ? current.view.GetComponent<UnityEngine.UIElements.UIDocument>() : null;
-            if (document != browserDocument)
-            {
-                browser?.Dispose();
-                browser = null;
-                browserDocument = document;
-            }
-            if (browser == null && document?.panelSettings != null)
-                browser = new VrToolkitWorldPanel(document, transform, rig.Eye, pointer);
-            browser?.Refresh(rig.Eye);
-            bool overridden = rig.Player?.Camera?.HasExternalOverride == true;
-            bool reposition = opening || externalCamera != overridden || Vector3.Distance(placedEye, rig.Eye.transform.position) > 0.3f || Mathf.Abs(Mathf.DeltaAngle(placedYaw, rig.BodyYaw)) > 20f;
-            if (reposition)
-            {
-                var eye = rig.Eye.transform;
-                Vector3 screen = owner.ScreenTarget != null ? owner.ScreenTarget.position : owner.transform.position;
-                Vector3 direction = Vector3.ProjectOnPlane(screen - eye.position, Vector3.up);
-                if (direction.sqrMagnitude < 0.01f) direction = Vector3.ProjectOnPlane(eye.forward, Vector3.up);
-                var facing = Quaternion.LookRotation(direction, Vector3.up);
-                float distance = Mathf.Clamp(Vector3.Distance(screen, eye.position) * 0.65f, 0.55f, 1f);
-                Vector3 center = eye.position + facing * new Vector3(0f, -0.12f, distance);
-                VrPanelPlacement.Place(panel, rig.Eye, center + facing * new Vector3(0.45f, -0.25f, -0.05f), 0.6f);
-                browser?.Place(rig.Eye, center + facing * new Vector3(-0.35f, 0.2f, 0f), 0.9f);
-                placedEye = eye.position;
-                placedYaw = rig.BodyYaw;
-            }
-            externalCamera = overridden;
-            if (browser?.Canvas != null && pointer?.IsPointingAt(browser.Canvas) == true && current.view != null)
-            {
-                var view = current.view;
-                view.lastPointerActivity = Time.unscaledTime;
-                view.pointerOver = true;
-                if (view.controls != null) { view.controls.style.opacity = 1f; view.controls.SetEnabled(true); }
-                if (view.full && view.browse != null)
+                if (controller == null || !controller.isActiveAndEnabled || controller.view == null) continue;
+                var owner = controller.GetComponentInParent<TVInteractionController>();
+                if (owner == null || owner.ScreenTarget == null) continue;
+                var document = controller.view.GetComponent<UIDocument>();
+                if (document == null || document.panelSettings == null) continue;
+                if (!screens.TryGetValue(controller, out var panel))
                 {
-                    view.browse.style.visibility = UnityEngine.UIElements.Visibility.Visible;
-                    view.browse.SetEnabled(true);
+                    if (!discover) continue;
+                    try
+                    {
+                        panel = new VrToolkitWorldPanel(document, transform, rig.Eye, VrRuntime.Presenter, "TV screen", 1600, 900);
+                        panel.EnableDepthRendering();
+                        screens.Add(controller, panel);
+                    }
+                    catch (System.Exception error)
+                    {
+                        panel?.Dispose();
+                        Debug.LogWarning("[NeuroMita VR] TV screen projection unavailable: " + error.Message);
+                        continue;
+                    }
+                }
+                bool focused = owner.IsViewActive;
+                IsViewing |= focused;
+                panel.Refresh(rig.Eye);
+                panel.MountOnDocument(rig.Eye);
+                var raycaster = panel.Canvas != null ? panel.Canvas.GetComponent<GraphicRaycaster>() : null;
+                if (raycaster != null) raycaster.enabled = focused;
+                if (focused && VrRuntime.Presenter?.IsPointingAt(panel.Canvas) == true)
+                {
+                    var view = controller.view;
+                    view.lastPointerActivity = Time.unscaledTime;
+                    view.pointerOver = true;
+                    if (view.controls != null) { view.controls.style.opacity = 1f; view.controls.SetEnabled(true); }
+                    if (view.full && view.browse != null)
+                    {
+                        view.browse.style.visibility = Visibility.Visible;
+                        view.browse.SetEnabled(true);
+                    }
                 }
             }
-            if (revision != LocalizationManager.CurrentRevision) RefreshLabels();
-            for (int i = 0; i < 7; i++) buttons[i].interactable = current.CanReceivePlaybackActions;
+            stale.Clear();
+            foreach (var entry in screens)
+                if (entry.Key == null || !entry.Key.isActiveAndEnabled || entry.Value.Canvas == null) stale.Add(entry.Key);
+            foreach (var key in stale) { screens[key].Dispose(); screens.Remove(key); }
+            RefreshHeldItems(rig);
         }
 
-        private void EnsureCanvas(VrUiPresenter pointer)
+        private void RefreshHeldItems(VrPlayerRig rig)
         {
-            if (canvas != null) return;
-            var root = VrObject.Create("VR TV controls", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(Image));
-            root.transform.SetParent(transform, false);
-            panel = root.GetComponent<RectTransform>();
-            panel.sizeDelta = new Vector2(600f, 360f);
-            panel.localScale = Vector3.one * 0.001f;
-            root.GetComponent<Image>().color = new Color(0.07f, 0.035f, 0.1f, 0.96f);
-            canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            photoExclusion = VrHostLease.Wrap(NeuroMita.Player.PlayerSelfieController.ExcludeCanvasFromPhotos(canvas));
-            canvas.sortingOrder = 600;
-            for (int i = 0; i < 8; i++)
+            if (!IsViewing || rig.Player?.MountRig == null) { RestoreItems(); return; }
+            var mounts = rig.Player.MountRig;
+            if (rig.Player.PersonRoot != null)
+                foreach (var arms in rig.Player.PersonRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    if (arms.sharedMesh != null && arms.sharedMesh.name == "Arms")
+                    {
+                        if (!hiddenItems.ContainsKey(arms)) hiddenItems.Add(arms, arms.forceRenderingOff);
+                        arms.forceRenderingOff = true;
+                    }
+            foreach (NeuroMita.Player.PlayerItemMountKind kind in System.Enum.GetValues(typeof(NeuroMita.Player.PlayerItemMountKind)))
             {
-                int index = i;
-                var button = VrObject.Create(i < 7 ? ((TVUIController.PlaybackAction)i).ToString() : "Close", typeof(RectTransform), typeof(Image), typeof(Button));
-                button.transform.SetParent(panel, false);
-                var rect = button.GetComponent<RectTransform>();
-                rect.sizeDelta = new Vector2(276f, 72f);
-                rect.anchoredPosition = new Vector2((i % 2 - 0.5f) * 288f, 126f - (i / 2) * 84f);
-                button.GetComponent<Image>().color = new Color(0.3f, 0.12f, 0.32f);
-                var control = button.GetComponent<Button>();
-                control.navigation = new Navigation { mode = Navigation.Mode.None };
-                control.onClick.AddListener(VrUiEvents.Callback(() =>
+                var mount = mounts.ResolveMountPoint(kind)?.ItemMount;
+                if (mount == null) continue;
+                foreach (var renderer in mount.GetComponentsInChildren<Renderer>(true))
                 {
-                    if (index < 7) controller?.TryPerformPlaybackAction((TVUIController.PlaybackAction)index);
-                    else interaction?.CloseYouTube();
-                }));
-                buttons.Add(control);
-                var text = VrObject.Create("Label", typeof(RectTransform), typeof(Text));
-                text.transform.SetParent(button.transform, false);
-                var textRect = text.GetComponent<RectTransform>();
-                textRect.anchorMin = Vector2.zero;
-                textRect.anchorMax = Vector2.one;
-                textRect.sizeDelta = new Vector2(-12f, -8f);
-                var label = text.GetComponent<Text>();
-                label.fontSize = 24;
-                label.alignment = TextAnchor.MiddleCenter;
-                label.color = Color.white;
-                label.raycastTarget = false;
-                labels.Add(label);
-            }
-            RefreshLabels();
-            pointer?.RegisterWorldCanvas(canvas);
-        }
-
-        private void RefreshLabels()
-        {
-            revision = LocalizationManager.CurrentRevision;
-            for (int i = 0; i < labels.Count; i++)
-            {
-                string action = i < 7 ? ((TVUIController.PlaybackAction)i).ToString() : "Close";
-                labels[i].font = LocalizationManager.CurrentFont ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                labels[i].text = LocalizationManager.GetTableString("vr.tv." + action) ?? action;
+                    if (!hiddenItems.ContainsKey(renderer)) hiddenItems.Add(renderer, renderer.forceRenderingOff);
+                    renderer.forceRenderingOff = true;
+                }
             }
         }
 
-        private void OnDestroy()
+        private void RestoreItems()
         {
-            browser?.Dispose();
-            browser = null;
-            browserDocument = null;
-            photoExclusion?.Dispose();
-            if (canvas != null) Destroy(canvas.gameObject);
+            foreach (var item in hiddenItems) if (item.Key != null) item.Key.forceRenderingOff = item.Value;
+            hiddenItems.Clear();
         }
+
+        private void Release()
+        {
+            IsViewing = false;
+            RestoreItems();
+            foreach (var panel in screens.Values) panel.Dispose();
+            screens.Clear();
+        }
+        private void OnDisable() => Release();
+        private void OnDestroy() => Release();
     }
 }

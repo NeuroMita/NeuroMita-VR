@@ -67,7 +67,7 @@ namespace NeuroMita.VR
             bool gameplay = player != null && Time.timeScale > 0f
                 && AppServices.GetOrNull<InputManager>()?.CurrentState == InputManager.InputState.Gameplay;
             var inventory = AppServices.GetOrNull<UIManager>()?.CurrentGameUIRoot?.GetComponentInChildren<InventoryFullUI>(true);
-            if (!gameplay || (inventory != null && inventory.isInventoryOpen)) { Hide(); return; }
+            if (VrTvPresenter.IsViewing || !gameplay || (inventory != null && inventory.isInventoryOpen)) { Hide(); return; }
 
             if (handPanel?.Canvas == null) { Release(handPanel); handPanel = CreatePanel("VR held item actions"); }
             if (worldPanel?.Canvas == null) { Release(worldPanel); worldPanel = CreatePanel("VR world actions"); }

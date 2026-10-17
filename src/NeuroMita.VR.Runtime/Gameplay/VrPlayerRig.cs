@@ -221,7 +221,7 @@ namespace NeuroMita.VR
             if (!calibrated || !HeadTracked || player == null || player.Rigidbody == null ||
                 player.Rigidbody.isKinematic || player.MoveLocked || player.InputLocked || Time.timeScale <= 0f) return;
             var input = AppServices.GetOrNull<InputManager>();
-            if (input == null || input.CurrentState != InputManager.InputState.Gameplay) return;
+            if (input == null || (input.CurrentState != InputManager.InputState.Gameplay && !VrWorldInteractionSession.CanMove(player))) return;
             Quaternion rotation = AnchorRotation * Quaternion.Inverse(referenceYaw);
             var offset = rawHeadPosition - reference;
             offset.y = 0f;

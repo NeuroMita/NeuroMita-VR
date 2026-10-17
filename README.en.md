@@ -16,13 +16,13 @@ Checked on October 17, 2026:
 | OpenXR and controllers | Session and tracking start; movement and item pickup were previously confirmed on a separate validation host |
 | Pause menu and VR Settings | Implemented; panels were captured on the validation host. Full settings acceptance is still pending |
 | Mita action panel and HUD | Fixes for UI layers, IL2CPP geometry and head anchoring are being validated |
-| Music player | The complete interface renders into a texture; VR placement, visibility and interaction are still being improved |
+| Music player | Panel operation confirmed by the user; suppressing world-object hover behind it still needs retesting |
 | TV / YouTube | Full browser projection and VR text entry are implemented; headset acceptance of search, settings and exit is pending |
 | QTEs, Mita grabs, resting, bat and other mechanics | Incomplete VR support; some scenarios may still need a keyboard or be awkward/unavailable |
 
 Working menu and apartment rendering does not mean the entire game is playable with controllers. See the [interaction audit and acceptance checklist](docs/vr-interaction-audit.md) and [technical checkpoint history](docs/checkpoint.md); these detailed documents currently use Russian and/or English.
 
-October 18 UI batch: Mita action buttons are anchored to her body, with stats above her head during interaction. Panel obstacle checks, projected easel tools and Russian VR settings labels are implemented but still await headset acceptance. A follow-up batch implements larger easel tools, ray-based drawing and the native console command catalog; these still await headset acceptance. Integration into the standard settings page remains unfinished. Full TV browser projection and Toolkit text entry are also awaiting acceptance.
+October 18 UI batch: Mita action buttons are anchored to her body, with stats above her head during interaction. Panel obstacle checks, projected easel tools and Russian VR settings labels are implemented but still await headset acceptance. A follow-up batch implements larger easel tools, ray-based drawing and the native console command catalog; the user has now confirmed easel drawing. The console opens, but pointer visibility and reliable clicking are still being improved. Integration into the standard settings page remains unfinished. Full TV browser projection and Toolkit text entry are also awaiting acceptance.
 
 ## Compatibility
 

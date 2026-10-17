@@ -189,6 +189,7 @@ namespace NeuroMita.VR
             gameObject.AddComponent<VrRadioPresenter>();
             gameObject.AddComponent<VrEaselPresenter>();
             gameObject.AddComponent<VrSceneTransitionPresenter>();
+            gameObject.AddComponent<VrWorldInteractionSession>();
             contextActions = gameObject.AddComponent<VrContextActionsPresenter>();
             gameObject.AddComponent<VrTvPresenter>();
             settingsPanel = gameObject.AddComponent<VrSettingsPanel>();
@@ -196,6 +197,7 @@ namespace NeuroMita.VR
             gameObject.AddComponent<VrHotbarPresenter>();
             VrQteHooks.Install();
             VrEaselDrawing.Install();
+            VrWorldInteractionHooks.Install();
             VrEarlyInputLoop.Install();
             initialized = true;
             VrDiscordPresence.Install();
@@ -421,6 +423,7 @@ namespace NeuroMita.VR
             Cleanup(VrEarlyInputLoop.Remove, "early input loop");
             Cleanup(VrQteHooks.Remove, "QTE hooks");
             Cleanup(VrEaselDrawing.Remove, "easel hooks");
+            Cleanup(VrWorldInteractionHooks.Remove, "world interaction hooks");
             VrConsoleAccess.Clear();
             Cleanup(VrDiscordPresence.Remove, "Discord presence");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");

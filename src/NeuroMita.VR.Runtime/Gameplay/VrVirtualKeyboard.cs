@@ -59,8 +59,8 @@ namespace NeuroMita.VR
             float distance = (VrRuntime.Settings?.VrUiDistance ?? 150) * 0.0085f;
             var position = eye.position + rotation * new Vector3(0f, -0.65f + (VrRuntime.Settings?.VrUiHeight ?? 0) * 0.01f, distance);
             int follow = VrRuntime.Settings?.VrUiFollow ?? 1;
-            if (follow == 2 || Vector3.Distance(panel.position, position) > 0.6f ||
-                Mathf.Abs(Mathf.DeltaAngle(panel.eulerAngles.y, rotation.eulerAngles.y)) > 45f)
+            if (!VrConsolePresentation.IsOpen && (follow == 2 || Vector3.Distance(panel.position, position) > 0.6f ||
+                Mathf.Abs(Mathf.DeltaAngle(panel.eulerAngles.y, rotation.eulerAngles.y)) > 45f))
                 panel.SetPositionAndRotation(position, rotation);
             panel.localScale = Vector3.one * ((VrRuntime.Settings?.VrUiScale ?? 100) * 0.00001f);
             PreserveSelection();

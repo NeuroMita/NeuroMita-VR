@@ -10,6 +10,7 @@ namespace NeuroMita.VR
         private bool disposed;
         private readonly UIDocument document;
         private readonly PanelSettings original, settings;
+        private Material depthMaterial;
         private readonly RenderTexture texture;
         private readonly VrToolkitInputRelay relay;
         private readonly IDisposable photoExclusion;
@@ -55,6 +56,34 @@ namespace NeuroMita.VR
             catch { Dispose(); throw; }
         }
 
+        internal void EnableDepthRendering()
+        {
+            if (Canvas == null) return;
+            var shader = Shader.Find("UI/Default");
+            if (shader == null) throw new InvalidOperationException("UI/Default is unavailable for TV depth rendering");
+            depthMaterial = new Material(shader);
+            depthMaterial.SetInt("unity_GUIZTestMode", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
+            depthMaterial.renderQueue = 3000;
+            Canvas.GetComponent<RawImage>().material = depthMaterial;
+            Canvas.sortingOrder = 0;
+        }
+
+        internal void MountOnDocument(Camera eye)
+        {
+            if (Canvas == null || document == null) return;
+            var rect = Canvas.GetComponent<RectTransform>();
+            if (rect.parent != document.transform) rect.SetParent(document.transform, false);
+            float pixelsPerUnit = Mathf.Max(1f, original.referenceSpritePixelsPerUnit);
+            Vector2 size = document.worldSpaceSize / pixelsPerUnit;
+            if (size.x <= 0.01f || size.y <= 0.01f) size = new Vector2(1.6f, 0.9f);
+            rect.localPosition = new Vector3(0f, 0f, -0.01f);
+            rect.localRotation = Quaternion.identity;
+            rect.localScale = new Vector3(size.x / rect.sizeDelta.x, size.y / rect.sizeDelta.y, 1f);
+            Vector3 towardEye = eye.transform.position - rect.position;
+            if (Vector3.Dot(rect.forward, towardEye) > 0f) rect.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            rect.position += towardEye.normalized * 0.005f;
+        }
+
         internal void Place(Camera eye, Vector3 center, float width)
         {
             if (Canvas != null) VrPanelPlacement.Place(Canvas.GetComponent<RectTransform>(), eye, center, width);
@@ -82,6 +111,7 @@ namespace NeuroMita.VR
             }
             if (texture != null) { texture.Release(); UnityEngine.Object.Destroy(texture); }
             if (settings != null) UnityEngine.Object.Destroy(settings);
+            if (depthMaterial != null) UnityEngine.Object.Destroy(depthMaterial);
         }
     }
 }
