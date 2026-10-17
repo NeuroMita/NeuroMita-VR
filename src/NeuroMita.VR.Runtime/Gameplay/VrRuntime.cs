@@ -195,6 +195,7 @@ namespace NeuroMita.VR
             VrQteHooks.Install();
             VrEarlyInputLoop.Install();
             initialized = true;
+            VrDiscordPresence.Install();
             graphics = gameObject.AddComponent<VrGraphicsPresenter>();
             Keyboard = gameObject.AddComponent<VrVirtualKeyboard>();
             Status = "OpenXR active";
@@ -414,6 +415,7 @@ namespace NeuroMita.VR
             initialized = false;
             Cleanup(VrEarlyInputLoop.Remove, "early input loop");
             Cleanup(VrQteHooks.Remove, "QTE hooks");
+            Cleanup(VrDiscordPresence.Remove, "Discord presence");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");
             Cleanup(() => RefreshMenuAttention(null), "menu attention");
             Cleanup(() => hud?.Restore(), "HUD");
