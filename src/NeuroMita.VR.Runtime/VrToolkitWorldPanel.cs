@@ -76,12 +76,12 @@ namespace NeuroMita.VR
             float pixelsPerUnit = Mathf.Max(1f, original.referenceSpritePixelsPerUnit);
             Vector2 size = document.worldSpaceSize / pixelsPerUnit;
             if (size.x <= 0.01f || size.y <= 0.01f) size = new Vector2(1.6f, 0.9f);
-            rect.localPosition = new Vector3(0f, 0f, -0.01f);
+            rect.localPosition = Vector3.zero;
             rect.localRotation = Quaternion.identity;
             rect.localScale = new Vector3(size.x / rect.sizeDelta.x, size.y / rect.sizeDelta.y, 1f);
             Vector3 towardEye = eye.transform.position - rect.position;
             if (Vector3.Dot(rect.forward, towardEye) > 0f) rect.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            rect.position += towardEye.normalized * 0.005f;
+            rect.position += towardEye.normalized * 0.02f;
         }
 
         internal void Place(Camera eye, Vector3 center, float width)

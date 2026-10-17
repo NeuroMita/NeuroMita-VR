@@ -15,7 +15,7 @@ namespace NeuroMita.VR
             PumpCommands();
             ulong bit = 1UL << (int)ExternalInputAction.OpenChat;
             bool raw = (held & bit) != 0;
-            bool ready = !VrQteInput.CapturesActions && VrRuntime.Rig?.Player != null &&
+            bool ready = !VrDeathInput.IsVisible && !VrQteInput.CapturesActions && VrRuntime.Rig?.Player != null &&
                 VrRuntime.Rig.HeadTracked && VrRuntime.Rig.LeftHandTracked && !SceneService.IsTransitionInProgress;
             held &= ~bit; down &= ~bit; up &= ~bit;
             if (pulse) { up |= bit; pulse = false; }

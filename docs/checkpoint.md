@@ -95,3 +95,19 @@ Build and public-host IL2CPP audit pass; native installation and headset behavio
 Right-stick downward gesture toggles crouch; left-stick sprint is preserved. Physical crouch hysteresis is independent of the toggle. UI hover/focus, selfie, QTE, sequence, movement lock and non-Gameplay states disarm the gesture until neutral. Scene/player/tracking/death resets clear the toggle. The host still owns Sit, collider and camera height; no teleport or direct capsule override was added. Twelve standalone policy checks are part of Test-Static. Actual seated camera/ceiling behavior remains unaccepted.
 
 Replaced the cumulative interaction audit with one current coverage map, explicit user-confirmed boundaries, remaining implementation gaps, pending acceptance and five selectable next-work directions. Historical diagnoses remain in Git. No live process/Unity/XR was launched or modified for this revision.
+
+
+## October 18 death input, feedback and public README
+
+Launched clean public host c8fbe61 for the user: PID 8320 / artifacts/public-release/20261018-011608. OpenXR active; live logs confirm installation of dialogue/blink/snowball hooks. The player is not restarted or hot-replaced while the user tests. README RU/EN no longer points external readers at the private Unity VR branch: it explains matching public host + BepInEx interop requirements instead.
+
+Next batch: VrDeathInput adds A skip and release gating, controller hint, target/action isolation and death camera selection. DeathScreenFxRig.BindCanvases is suppressed only during active VR so the host cannot force the adapted canvas back into screen space. Native death flow, lives, reveal, retry and exit callbacks remain intact. VrHaptics centralizes short UI/contact/damage/bat pulses, respects Off/Low/Normal, limits rate and prioritizes damage. Contacts prime silently after tracking changes and do not repeat while held. Damage compares native Health before/after rather than buzzing on a rejected call. All new functionality still needs native installation and headset acceptance on the next run. Static checks include 12 crouch and 10 haptic policy assertions.
+
+The user authorized publishing a GitHub mod release if a current Codex usage window has less than 10 percent remaining; they will change repository visibility themselves. Do not consume usage-reset credits. Latest check during this batch: 20 percent primary / 88 percent weekly remaining, so the conditional release has not been triggered. Verify current limits before publishing; do not infer that this snapshot remains current.
+
+
+## c8fbe61 user feedback: easel ABI failure, TV visibility, radio and turning
+
+The user reported a crash opening the easel, invisible/unusable TV, radio too small and unavailable stick turning in interactions. Public-run BepInEx log contains repeated native->managed BeginExternalOverride trampoline System.Buffer.Memmove exceptions. Removed that Harmony target entirely. Easel focus is cleared once in its scoped world session using ClearExternalOverride(bool). The next process must validate that the crash/trampoline error is gone; a static build cannot establish this.
+
+Radio is 25 percent wider, mute/volume targets are larger and restored on release. Scoped own locks release Look as well as Move/Input, and rig turn accepts the same interaction contexts. Camera override is cleared before measuring rotation compensation, preventing a zoomed camera from dragging the player body to the TV. Auto-exit is one additional horizontal metre away from the object relative to its opening distance, avoiding immediate closure when opening outside an absolute one-metre radius. TV uses the controller's explicit InteractionController reference and mounts the depth-tested panel two centimetres toward the viewer. All changes still await native/headset acceptance.

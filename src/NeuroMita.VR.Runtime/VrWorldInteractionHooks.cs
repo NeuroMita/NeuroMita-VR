@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using NeuroMita.Player;
@@ -21,8 +20,6 @@ namespace NeuroMita.VR
                 Patch(candidate, typeof(PlayerBlockHub).GetMethod("Acquire", Flags), nameof(AcquirePrefix));
                 Patch(candidate, typeof(PlayerInputController).GetMethod("Tick", Flags), nameof(InputPostfix), true);
                 Patch(candidate, typeof(PlayerInteractionController).GetMethod("Tick", Flags), nameof(InteractionPrefix));
-                var camera = typeof(PlayerCameraController).GetMethods(Flags).First(m => m.Name == "BeginExternalOverride" && m.GetParameters()[0].ParameterType == typeof(Vector3));
-                Patch(candidate, camera, nameof(CameraPrefix));
                 var zoom = typeof(TVDeviceController).GetMethod("ApplyZoomToCamera", Flags);
                 Patch(candidate, zoom, nameof(ZoomPrefix));
                 Patch(candidate, zoom, nameof(ZoomPostfix), true);
@@ -47,10 +44,9 @@ namespace NeuroMita.VR
             if (!VrRuntime.IsActive || owner == null) return;
             if ((reason == "Easel_Drawing" && owner.TryCast<EaselController>() != null) ||
                 (reason == "TV_YouTube_Mode" && owner.TryCast<TVInteractionController>() != null))
-                mask &= ~(PlayerBlockMask.Move | PlayerBlockMask.Input);
+                mask &= ~(PlayerBlockMask.Move | PlayerBlockMask.Input | PlayerBlockMask.Look);
         }
         private static void InputPostfix(PlayerInputController __instance) => VrWorldInteractionSession.ApplyMovement(__instance.player);
-        private static bool CameraPrefix(PlayerCameraController __instance) => !VrWorldInteractionSession.HasOpenEasel(__instance.player);
         private static bool InteractionPrefix(PlayerInteractionController __instance)
         {
             if (!VrRuntime.IsActive || VrRuntime.Presenter?.IsPointingAtToolkit != true) return true;

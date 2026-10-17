@@ -10,7 +10,9 @@ namespace NeuroMita.VR
         private MonoBehaviour owner;
         private string kind;
         private float discoverAt;
-        private bool releasedTvCamera;
+        private bool releasedTvCamera, releasedEaselCamera;
+        private MonoBehaviour distanceOwner;
+        private float openedDistance;
         public VrWorldInteractionSession(IntPtr pointer) : base(pointer) { }
 
         internal static bool CanMove(PlayerActor player)
@@ -41,14 +43,6 @@ namespace NeuroMita.VR
             }
         }
 
-        internal static bool HasOpenEasel(PlayerActor player)
-        {
-            if (!VrRuntime.IsActive || VrRuntime.Rig?.Player != player || player == null || player.Sequence?.IsPlaying == true) return false;
-            foreach (var easel in UnityEngine.Object.FindObjectsByType<EaselController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-                if (easel.IsOpen) return true;
-            return false;
-        }
-
         private void LateUpdate()
         {
             instance = this;
@@ -57,7 +51,7 @@ namespace NeuroMita.VR
             if (focus != kind || Time.unscaledTime >= discoverAt)
             {
                 discoverAt = Time.unscaledTime + 0.25f;
-                if (focus != kind) releasedTvCamera = false;
+                if (focus != kind) { releasedTvCamera = releasedEaselCamera = false; distanceOwner = null; }
                 kind = focus;
                 owner = null;
                 if (kind == typeof(EaselController).FullName)
@@ -81,7 +75,15 @@ namespace NeuroMita.VR
                 var runtime = tvOwner.GetComponent<TVInteractionController>();
                 if (runtime?.ScreenTarget != null) anchor = runtime.ScreenTarget.position;
             }
-            if (Vector3.ProjectOnPlane(rig.Eye.transform.position - anchor, Vector3.up).magnitude > 3f) CloseOwner();
+            if (easelOwner != null && !releasedEaselCamera && CanMove(rig.Player) && rig.Player.Camera?.HasExternalOverride == true)
+            {
+                rig.Player.Camera.ClearExternalOverride(restoreImmediately: true);
+                rig.RefreshTrackingPose();
+                releasedEaselCamera = true;
+            }
+            float distance = Vector3.ProjectOnPlane(rig.Eye.transform.position - anchor, Vector3.up).magnitude;
+            if (distanceOwner != owner) { distanceOwner = owner; openedDistance = distance; }
+            if (distance > openedDistance + 1f) CloseOwner();
         }
 
         private void CloseOwner()

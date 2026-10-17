@@ -25,6 +25,7 @@ namespace NeuroMita.VR
 
         public static void Prepare()
         {
+            if (VrDeathInput.IsVisible) { Clear(); return; }
             var manager = QTEManager.Instance;
             bool active = VrRuntime.IsActive && VrQteHooks.IsInstalled && manager != null && manager.IsActive;
             bool anyHeld = false;

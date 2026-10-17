@@ -60,7 +60,11 @@ namespace NeuroMita.VR
                 if (hit != null)
                 {
                     armed = false; cooldownUntil = now + 0.75f;
-                    if (hit.DisableByPlayerStrike()) Debug.Log("[NeuroMita VR] Bat swing hit mannequin");
+                    if (hit.DisableByPlayerStrike())
+                    {
+                        VrHaptics.BatImpact();
+                        Debug.Log("[NeuroMita VR] Bat swing hit mannequin");
+                    }
                 }
             }
             Store(player, tip, grip, body, now);

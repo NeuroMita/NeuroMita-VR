@@ -90,6 +90,7 @@ namespace NeuroMita.VR
             ConstrainPhysicsStep(Vector3.MoveTowards(body.position, resolvedPosition, 3f * Time.fixedDeltaTime), resolvedRotation);
             body.MovePosition(physicsPosition);
             body.MoveRotation(physicsRotation);
+            UpdateContactHaptics();
         }
 
         private void ConstrainPhysicsStep(Vector3 desiredPosition, Quaternion desiredRotation)

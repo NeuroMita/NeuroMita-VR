@@ -184,8 +184,8 @@ namespace NeuroMita.VR
                 Recenter();
             }
             var input = AppServices.GetOrNull<InputManager>();
-            bool canTurn = !VrQteInput.HasActiveQte && player != null && !player.InputLocked && !player.LookLocked &&
-                input != null && input.CurrentState == InputManager.InputState.Gameplay && Time.timeScale > 0f;
+            bool canTurn = !VrDeathInput.IsVisible && !VrQteInput.HasActiveQte && player != null && !player.InputLocked && !player.LookLocked &&
+                input != null && (input.CurrentState == InputManager.InputState.Gameplay || VrWorldInteractionSession.CanMove(player)) && Time.timeScale > 0f;
             float turnAxis = canTurn ? VrRuntime.Input.Turn.x : 0f;
             int turnMode = settings?.VrTurnMode ?? 0;
             if (turnMode != lastTurnMode)
@@ -199,6 +199,11 @@ namespace NeuroMita.VR
                 : snapTurn.Sample(turnAxis, settings?.VrSnapAngle ?? 45);
             if (turn != 0f)
             {
+                if (VrWorldInteractionSession.CanMove(player) && player.Camera.HasExternalOverride)
+                {
+                    player.Camera.ClearExternalOverride(restoreImmediately: true);
+                    ApplyPose();
+                }
                 var before = eye.transform.position;
                 player.Camera.SetAngles(player.Camera.Yaw + turn, 0f);
                 player.Camera.ApplyImmediate();
@@ -218,7 +223,7 @@ namespace NeuroMita.VR
         private void FixedUpdate()
         {
             if (VrRuntime.Settings?.VrRoomscale == false) return;
-            if (!calibrated || !HeadTracked || player == null || player.Rigidbody == null ||
+            if (VrDeathInput.IsVisible || !calibrated || !HeadTracked || player == null || player.Rigidbody == null ||
                 player.Rigidbody.isKinematic || player.MoveLocked || player.InputLocked || Time.timeScale <= 0f) return;
             var input = AppServices.GetOrNull<InputManager>();
             if (input == null || (input.CurrentState != InputManager.InputState.Gameplay && !VrWorldInteractionSession.CanMove(player))) return;

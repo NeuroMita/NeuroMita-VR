@@ -358,7 +358,7 @@ namespace NeuroMita.VR
 
         private void UpdatePointer()
         {
-            if (VrQteInput.CapturesActions) { CancelInput(); return; }
+            if (VrQteInput.CapturesActions || VrDeathInput.BlocksPointer) { CancelInput(); return; }
             bool leftPointer = VrRuntime.Settings?.VrPointerLeft == true;
             if (!pointerPreferenceSet || pointerLeft != leftPointer)
             {
@@ -396,7 +396,7 @@ namespace NeuroMita.VR
                 if (raycaster == null || !raycaster.isActiveAndEnabled) continue;
                 var canvas = raycaster.GetComponent<Canvas>();
                 if (!canvas.isActiveAndEnabled || canvas.renderMode != RenderMode.WorldSpace) continue;
-                if (!CanRaycastDuringPause(canvas, pauseCanvas)) continue;
+                if (!VrDeathInput.IsVisible && !CanRaycastDuringPause(canvas, pauseCanvas)) continue;
                 var rect = canvas.GetComponent<RectTransform>();
                 if (!TryProject(ray, rect, out var world, out float distance)) continue;
                 if (distance > 10f) continue;
@@ -419,7 +419,10 @@ namespace NeuroMita.VR
                     }
                     continue;
                 }
-                if (distance >= nearest) continue;
+                if (VrDeathInput.IsVisible)
+                    for (int i = hits.Count - 1; i >= 0; i--)
+                        if (!VrDeathInput.AllowsTarget(hits[i].gameObject)) hits.RemoveAt(i);
+                if (hits.Count == 0 || distance >= nearest) continue;
                 nearest = distance;
                 chosen = hits[0];
                 chosenPosition = pixels;
@@ -503,19 +506,7 @@ namespace NeuroMita.VR
             return rect.rect.Contains(new Vector2(local.x, local.y));
         }
 
-        private static void SendUiHaptic(float amplitude, float duration)
-        {
-            int intensity = VrRuntime.Settings?.VrHaptics ?? 2;
-            if (intensity == 0) return;
-            var hand = VrRuntime.Settings?.VrPointerLeft == true ? XRNode.LeftHand : XRNode.RightHand;
-            var device = InputDevices.GetDeviceAtXRNode(hand);
-#if NEUROMITA_VR_IL2CPP
-            if (device.isValid)
-#else
-            if (device.isValid && device.TryGetHapticCapabilities(out var capabilities) && capabilities.supportsImpulse)
-#endif
-                device.SendHapticImpulse(0, amplitude * intensity * 0.5f, duration);
-        }
+        private static void SendUiHaptic(float amplitude, float duration) => VrHaptics.Ui(amplitude, duration);
 
         private void ReleasePress(GameObject target)
         {

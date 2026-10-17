@@ -16,6 +16,7 @@ namespace NeuroMita.VR
         private Canvas canvas;
         private VisualElement backdrop;
         private StyleColor originalBackdrop;
+        private VrRadioLayout volumeLayout;
         private VrToolkitInputRelay relay;
         private System.IDisposable photoExclusion;
         private float nextDiscovery;
@@ -61,6 +62,7 @@ namespace NeuroMita.VR
                 originalBackdrop = backdrop.style.backgroundColor;
                 backdrop.style.backgroundColor = new Color(0.16f, 0.06f, 0.22f, 1f);
             }
+            volumeLayout = new VrRadioLayout(document.rootVisualElement);
             var root = VrObject.Create("VR radio controls", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(RawImage));
             root.transform.SetParent(transform, false);
             canvas = root.GetComponent<Canvas>();
@@ -69,7 +71,7 @@ namespace NeuroMita.VR
             canvas.sortingOrder = 650;
             var rect = root.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(1280f, 900f);
-            rect.localScale = Vector3.one * (1.1f / 1280f);
+            rect.localScale = Vector3.one * (1.375f / 1280f);
             var head = eye.transform;
             Vector3 anchor = VrHostViews.RadioAnchor(source) != null ? VrHostViews.RadioAnchor(source).position : head.position + head.forward;
             var facing = Quaternion.LookRotation((anchor - head.position).sqrMagnitude > 0.001f ? anchor - head.position : head.forward, Vector3.up);
@@ -81,7 +83,7 @@ namespace NeuroMita.VR
                 center = head.position + upright * new Vector3(0.25f, -0.12f, 1.15f);
                 direction = center - head.position;
             }
-            VrPanelPlacement.Place(rect, eye, center, 1.1f);
+            VrPanelPlacement.Place(rect, eye, center, 1.375f);
             root.GetComponent<RawImage>().texture = texture;
             relay = root.AddComponent<VrToolkitInputRelay>();
             relay.Bind(document, rect);
@@ -92,6 +94,7 @@ namespace NeuroMita.VR
 
         private void Release()
         {
+            volumeLayout?.Dispose(); volumeLayout = null;
             if (relay != null) relay.Cancel();
             if (backdrop != null) backdrop.style.backgroundColor = originalBackdrop;
             backdrop = null;

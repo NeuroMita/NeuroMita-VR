@@ -205,6 +205,8 @@ namespace NeuroMita.VR
             VrDialogueContext.Install();
             VrBlinkInput.Install();
             VrSnowballInput.Install();
+            VrDeathInput.Install();
+            VrDamageFeedback.Install();
             graphics = gameObject.AddComponent<VrGraphicsPresenter>();
             Keyboard = gameObject.AddComponent<VrVirtualKeyboard>();
             Status = "OpenXR active";
@@ -228,6 +230,8 @@ namespace NeuroMita.VR
         private void OnActiveSceneChanged(Scene previous, Scene current)
         {
             Input?.ResetPosture();
+            VrDeathInput.Clear();
+            VrHaptics.Reset();
             VrConsoleAccess.Clear();
             nextDiscovery = 0f;
             Presenter?.CancelInput();
@@ -291,6 +295,7 @@ namespace NeuroMita.VR
                 down |= 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
                 VrDebugControl.PauseRequested = false;
             }
+            VrDeathInput.Filter(ref held, ref down, ref up);
             VrConsoleAccess.Filter(ref held, ref down, ref up);
             ulong pauseBit = 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
             if (!VrQteInput.CapturesActions && (down & pauseBit) != 0 && (settingsPanel?.ClosePage() == true || games?.CloseActive() == true))
@@ -309,22 +314,22 @@ namespace NeuroMita.VR
                 up &= menuActions;
             }
             if (VrQteInput.CapturesActions) held = down = up = 0;
-            Vector2 movement = gameplay && !VrQteInput.HasActiveQte ? Input.Move : Vector2.zero;
+            Vector2 movement = gameplay && !VrQteInput.HasActiveQte && !VrDeathInput.IsVisible ? Input.Move : Vector2.zero;
             VrDiagnostics.Controls(rig, held, down, movement);
             Vector2 pointer = Presenter != null ? Presenter.PointerPosition : Vector2.zero;
             if (!TryMaintainControlSession() || !NeuroMita.Modding.ExternalControlBridge.SetInput(controlSession, held, down, up,
                 movement.x, movement.y, true, true, pointer.x, pointer.y, Presenter != null) ||
                 !NeuroMita.Modding.ExternalControlBridge.SetPointerButtons(controlSession,
-                    !VrQteInput.CapturesActions && Input.PointerPrimaryHeld, !VrQteInput.CapturesActions && Input.PointerPrimaryDown, !VrQteInput.CapturesActions && Input.PointerPrimaryUp))
+                    !VrQteInput.CapturesActions && !VrDeathInput.BlocksPointer && Input.PointerPrimaryHeld, !VrQteInput.CapturesActions && !VrDeathInput.BlocksPointer && Input.PointerPrimaryDown, !VrQteInput.CapturesActions && !VrDeathInput.BlocksPointer && Input.PointerPrimaryUp))
             {
                 Fail("External control session was lost");
                 return;
             }
             VrDiagnostics.HostControls(rig, down, movement);
             NeuroMita.Modding.ExternalControlBridge.SetCameraOwnership(controlSession, rig != null ? rig.Player : null, true);
-            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, !VrQteInput.CapturesActions && ((!VrBlinkInput.CapturesHelp && Input.HelpDown) || VrDebugControl.HelpRequested), ResolveHelpText());
+            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, !VrQteInput.CapturesActions && !VrDeathInput.IsVisible && ((!VrBlinkInput.CapturesHelp && Input.HelpDown) || VrDebugControl.HelpRequested), ResolveHelpText());
             VrDebugControl.HelpRequested = false;
-            NeuroMita.Modding.ExternalControlBridge.SetSpeechPolicy(controlSession, true, !VrQteInput.CapturesActions && rig?.HeadTracked == true && rig.LeftHandTracked);
+            NeuroMita.Modding.ExternalControlBridge.SetSpeechPolicy(controlSession, true, !VrQteInput.CapturesActions && !VrDeathInput.IsVisible && rig?.HeadTracked == true && rig.LeftHandTracked);
             NeuroMita.Modding.ExternalControlBridge.SetAvatarPresentation(controlSession, Settings?.VrAvatarMode ?? 0, rig?.UseIsolatedHands == true);
             while (NeuroMita.Modding.ExternalControlBridge.TryDequeueCanvas(controlSession, out var canvas))
                 Presenter?.PresentCanvas(canvas);
@@ -363,9 +368,11 @@ namespace NeuroMita.VR
             Scene content = SceneManager.GetActiveScene();
             Camera menuCamera = MenuSceneResolver.ResolvePrimaryRoot(content) != null
                 ? MenuSceneResolver.ResolvePrimaryCamera(content) : null;
-            Camera camera = SelectCamera(player != null ? player.MainCamera : null, menuCamera, Camera.main, Camera.allCameras);
+            var deathRig = DeathScreenCoordinator.Instance?.FxRig;
+            Camera deathCamera = deathRig?.IsActive == true ? deathRig.Camera : null;
+            Camera camera = deathCamera != null ? deathCamera : SelectCamera(player != null ? player.MainCamera : null, menuCamera, Camera.main, Camera.allCameras);
             if (player != null && camera != player.MainCamera) player = null;
-            if (menuCamera != null) player = null;
+            if (menuCamera != null || deathCamera != null) player = null;
             if (rig != null && (camera == null || rig.Eye != camera || rig.Player != player))
             {
                 hud.Restore();
@@ -436,6 +443,9 @@ namespace NeuroMita.VR
             Cleanup(VrDialogueContext.Remove, "dialogue context");
             Cleanup(VrBlinkInput.Remove, "manual blink");
             Cleanup(VrSnowballInput.Remove, "snowball input");
+            Cleanup(VrDeathInput.Remove, "death input");
+            Cleanup(VrDamageFeedback.Remove, "damage feedback");
+            Cleanup(VrHaptics.Reset, "haptic output");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");
             Cleanup(() => RefreshMenuAttention(null), "menu attention");
             Cleanup(() => hud?.Restore(), "HUD");

@@ -28,7 +28,7 @@ namespace NeuroMita.VR
             foreach (var controller in candidates)
             {
                 if (controller == null || !controller.isActiveAndEnabled || controller.view == null) continue;
-                var owner = controller.GetComponentInParent<TVInteractionController>();
+                var owner = controller.InteractionController ?? controller.GetComponentInParent<TVInteractionController>();
                 if (owner == null || owner.ScreenTarget == null) continue;
                 var document = controller.view.GetComponent<UIDocument>();
                 if (document == null || document.panelSettings == null) continue;
@@ -40,6 +40,7 @@ namespace NeuroMita.VR
                         panel = new VrToolkitWorldPanel(document, transform, rig.Eye, VrRuntime.Presenter, "TV screen", 1600, 900);
                         panel.EnableDepthRendering();
                         screens.Add(controller, panel);
+                        VrDiagnostics.Mark("TV panel bound", "controller=" + controller.name + ", owner=" + owner.name + ", document=" + document.name + ", size=" + document.worldSpaceSize);
                     }
                     catch (System.Exception error)
                     {

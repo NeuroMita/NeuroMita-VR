@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../src/NeuroMita.VR.Runtime/VrCrouchToggle.cs" Link="VrCrouchToggle.cs" />
+    <Compile Include="../../src/NeuroMita.VR.Runtime/VrHapticGate.cs" Link="VrHapticGate.cs" />
   </ItemGroup>
 </Project>
