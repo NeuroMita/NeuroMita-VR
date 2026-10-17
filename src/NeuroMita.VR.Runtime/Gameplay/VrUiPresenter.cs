@@ -349,6 +349,7 @@ namespace NeuroMita.VR
 
         private void UpdatePointer()
         {
+            if (VrQteInput.CapturesActions) { CancelInput(); return; }
             bool leftPointer = VrRuntime.Settings?.VrPointerLeft == true;
             if (!pointerPreferenceSet || pointerLeft != leftPointer)
             {

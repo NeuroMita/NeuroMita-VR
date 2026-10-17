@@ -192,6 +192,7 @@ namespace NeuroMita.VR
             settingsPanel = gameObject.AddComponent<VrSettingsPanel>();
             games = gameObject.AddComponent<VrGamesPresenter>();
             gameObject.AddComponent<VrHotbarPresenter>();
+            VrQteHooks.Install();
             VrEarlyInputLoop.Install();
             initialized = true;
             graphics = gameObject.AddComponent<VrGraphicsPresenter>();
@@ -261,6 +262,7 @@ namespace NeuroMita.VR
                 return;
             }
             rig?.RefreshTrackingPose();
+            VrQteInput.Prepare();
             ulong held = 0, down = 0, up = 0;
             foreach (NeuroMita.Modding.ExternalInputAction externalAction in Enum.GetValues(typeof(NeuroMita.Modding.ExternalInputAction)))
             {
@@ -278,7 +280,7 @@ namespace NeuroMita.VR
                 VrDebugControl.PauseRequested = false;
             }
             ulong pauseBit = 1UL << (int)NeuroMita.Modding.ExternalInputAction.Pause;
-            if ((down & pauseBit) != 0 && (settingsPanel?.ClosePage() == true || games?.CloseActive() == true))
+            if (!VrQteInput.CapturesActions && (down & pauseBit) != 0 && (settingsPanel?.ClosePage() == true || games?.CloseActive() == true))
             {
                 held &= ~pauseBit;
                 down &= ~pauseBit;
@@ -293,22 +295,23 @@ namespace NeuroMita.VR
                 down &= menuActions;
                 up &= menuActions;
             }
-            Vector2 movement = gameplay ? Input.Move : Vector2.zero;
+            if (VrQteInput.CapturesActions) held = down = up = 0;
+            Vector2 movement = gameplay && !VrQteInput.HasActiveQte ? Input.Move : Vector2.zero;
             VrDiagnostics.Controls(rig, held, down, movement);
             Vector2 pointer = Presenter != null ? Presenter.PointerPosition : Vector2.zero;
             if (!TryMaintainControlSession() || !NeuroMita.Modding.ExternalControlBridge.SetInput(controlSession, held, down, up,
                 movement.x, movement.y, true, true, pointer.x, pointer.y, Presenter != null) ||
                 !NeuroMita.Modding.ExternalControlBridge.SetPointerButtons(controlSession,
-                    Input.PointerPrimaryHeld, Input.PointerPrimaryDown, Input.PointerPrimaryUp))
+                    !VrQteInput.CapturesActions && Input.PointerPrimaryHeld, !VrQteInput.CapturesActions && Input.PointerPrimaryDown, !VrQteInput.CapturesActions && Input.PointerPrimaryUp))
             {
                 Fail("External control session was lost");
                 return;
             }
             VrDiagnostics.HostControls(rig, down, movement);
             NeuroMita.Modding.ExternalControlBridge.SetCameraOwnership(controlSession, rig != null ? rig.Player : null, true);
-            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, Input.HelpDown || VrDebugControl.HelpRequested, ResolveHelpText());
+            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, !VrQteInput.CapturesActions && (Input.HelpDown || VrDebugControl.HelpRequested), ResolveHelpText());
             VrDebugControl.HelpRequested = false;
-            NeuroMita.Modding.ExternalControlBridge.SetSpeechPolicy(controlSession, true, rig?.HeadTracked == true && rig.LeftHandTracked);
+            NeuroMita.Modding.ExternalControlBridge.SetSpeechPolicy(controlSession, true, !VrQteInput.CapturesActions && rig?.HeadTracked == true && rig.LeftHandTracked);
             NeuroMita.Modding.ExternalControlBridge.SetAvatarPresentation(controlSession, Settings?.VrAvatarMode ?? 0, rig?.UseIsolatedHands == true);
             while (NeuroMita.Modding.ExternalControlBridge.TryDequeueCanvas(controlSession, out var canvas))
                 Presenter?.PresentCanvas(canvas);
@@ -410,6 +413,7 @@ namespace NeuroMita.VR
         {
             initialized = false;
             Cleanup(VrEarlyInputLoop.Remove, "early input loop");
+            Cleanup(VrQteHooks.Remove, "QTE hooks");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");
             Cleanup(() => RefreshMenuAttention(null), "menu attention");
             Cleanup(() => hud?.Restore(), "HUD");

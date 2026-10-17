@@ -11,6 +11,7 @@
     <Compile Include="*.cs" />
     <Compile Include="Gameplay\**\*.cs" />
     <Reference Include="$(HostDirectory)\BepInEx\interop\*.dll" />
+    <Reference Include="0Harmony"><HintPath>$(HostDirectory)\BepInEx\core\0Harmony.dll</HintPath></Reference>
     <Reference Include="Il2CppInterop.Runtime"><HintPath>$(HostDirectory)\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath></Reference>
       <Reference Include="BepInEx.Unity.IL2CPP"><HintPath>$(HostDirectory)\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath></Reference>
   </ItemGroup>

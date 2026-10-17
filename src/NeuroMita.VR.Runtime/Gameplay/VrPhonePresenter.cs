@@ -28,7 +28,7 @@ namespace NeuroMita.VR
         {
             var rig = VrRuntime.Rig;
             var current = rig?.Player != null ? rig.Player.GetComponent<PlayerSelfieController>() : null;
-            if (VrRuntime.Input?.IsActive == true)
+            if (!VrQteInput.CapturesActions && VrRuntime.Input?.IsActive == true)
                 ApplyFramingInput(current, VrRuntime.Input.Turn, Time.unscaledDeltaTime);
             Refresh(current, rig, VrRuntime.Presenter);
         }

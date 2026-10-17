@@ -184,7 +184,7 @@ namespace NeuroMita.VR
                 Recenter();
             }
             var input = AppServices.GetOrNull<InputManager>();
-            bool canTurn = player != null && !player.InputLocked && !player.LookLocked &&
+            bool canTurn = !VrQteInput.HasActiveQte && player != null && !player.InputLocked && !player.LookLocked &&
                 input != null && input.CurrentState == InputManager.InputState.Gameplay && Time.timeScale > 0f;
             float turnAxis = canTurn ? VrRuntime.Input.Turn.x : 0f;
             int turnMode = settings?.VrTurnMode ?? 0;
