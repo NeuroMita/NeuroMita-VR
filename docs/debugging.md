@@ -37,3 +37,8 @@ The pause-test/help-test commands inject a single diagnostic edge through the no
 From the main menu, tools/Test-VrUi.ps1 -RunDirectory <current diagnostic run> performs and checks the CrazyHouse pause/hints/radio smoke. It changes the active scene and UI. It tests synthetic input edges; physical Touch acceptance remains separate.
 
 The views diagnostic command logs all camera and canvas states, active graphics, stereoEnabled and XR render-pass count. It does not reposition or toggle views. A running display with stereo enabled and render passes is pipeline evidence, not proof of the image seen by the headset user.
+### Render isolation commands
+
+`eye-state` records near/far clipping, orthographic mode, clear flags/color, culling mask, frame number, stereo view/projection matrices and eye world positions. `render-state` records camera behaviours and comfort fade/vignette values. Both are read-only.
+
+`render-no-effects` disables the current camera's comfort presenter and PostProcessLayer for this run; restart to restore their normal lifecycle. `render-probe` saves the camera's culling mask, clear flags and background color, then requests a solid magenta clear with no geometry. `render-restore` restores those saved values on that same camera. Restore before changing scenes, or restart the player. These commands are diagnostic isolation only, never a permanent graphics fix; camera animation may overwrite values, so inspect eye-state as well as the captured image. A screenshot is not headset acceptance.

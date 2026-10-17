@@ -10,6 +10,10 @@ namespace NeuroMita.VR
     {
         private string directory;
         private float nextPoll;
+        private Camera probeCamera;
+        private int probeMask;
+        private CameraClearFlags probeClear;
+        private Color probeColor;
         internal static bool PauseRequested, HelpRequested;
         public VrDebugControl(IntPtr pointer) : base(pointer) { }
         private static unsafe void Capture(string filename)
@@ -40,6 +44,54 @@ namespace NeuroMita.VR
                     var radio = UnityEngine.Object.FindFirstObjectByType<Radio>();
                     if (radio == null) throw new InvalidOperationException("No radio in the current scene.");
                     radio.SetUIMode(true);
+                }
+                else if (command == "eye-state" || command == "render-probe" || command == "render-restore")
+                {
+                    var camera = VrRuntime.Rig?.Eye;
+                    if (camera == null) throw new InvalidOperationException("No eye camera");
+                    VrDiagnostics.Mark("camera projection", "near=" + camera.nearClipPlane + ", far=" + camera.farClipPlane + ", orthographic=" + camera.orthographic + ", clear=" + camera.clearFlags + ", color=" + camera.backgroundColor + ", mask=" + camera.cullingMask + ", frame=" + Time.frameCount);
+                    foreach (Camera.StereoscopicEye eye in Enum.GetValues(typeof(Camera.StereoscopicEye)))
+                    {
+                        var view = camera.GetStereoViewMatrix(eye);
+                        var world = view.inverse;
+                        VrDiagnostics.Mark("eye matrix", eye + ", cameraPosition=" + camera.transform.position + ", eyeWorld=" + world.GetColumn(3) + ", projection=" + camera.GetStereoProjectionMatrix(eye));
+                    }
+                    if (command == "render-probe")
+                    {
+                        if (probeCamera == null) { probeCamera = camera; probeMask = camera.cullingMask; probeClear = camera.clearFlags; probeColor = camera.backgroundColor; }
+                        camera.cullingMask = 0;
+                        camera.clearFlags = CameraClearFlags.SolidColor;
+                        camera.backgroundColor = new Color(0.8f, 0.1f, 0.7f, 1f);
+                        VrDiagnostics.Mark("render probe", "solid magenta, no geometry");
+                    }
+                    else if (command == "render-restore" && probeCamera != null)
+                    {
+                        probeCamera.cullingMask = probeMask;
+                        probeCamera.clearFlags = probeClear;
+                        probeCamera.backgroundColor = probeColor;
+                        probeCamera = null;
+                    }
+                }
+                else if (command == "render-state" || command == "render-no-effects")
+                {
+                    var rig = VrRuntime.Rig;
+                    var camera = rig?.Eye;
+                    if (camera == null) throw new InvalidOperationException("No VR camera");
+                    foreach (var component in camera.GetComponents<UnityEngine.Behaviour>())
+                        VrDiagnostics.Mark("camera behaviour", component.GetIl2CppType().FullName + ", enabled=" + component.enabled);
+                    var comfort = camera.GetComponent<VrComfortPresenter>();
+                    if (comfort != null)
+                    {
+                        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                        VrDiagnostics.Mark("comfort state", "fade=" + typeof(VrComfortPresenter).GetField("fade", flags)?.GetValue(comfort) + ", vignette=" + typeof(VrComfortPresenter).GetField("vignette", flags)?.GetValue(comfort));
+                    }
+                    if (command == "render-no-effects")
+                    {
+                        if (comfort != null) comfort.enabled = false;
+                        var post = camera.GetComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+                        if (post != null) post.enabled = false;
+                        VrDiagnostics.Mark("render isolation", "comfort and PostProcessLayer disabled for this run");
+                    }
                 }
                 else if (command == "views")
                 {
