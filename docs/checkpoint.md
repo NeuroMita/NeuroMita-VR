@@ -47,3 +47,11 @@ Mouse-only coroutine публичного host не запускается дл�
 Предыдущий runtime стартовал по таймеру 5 секунд на SceneAihasto, затем перевязывался на SceneMenu. Bootstrap теперь ждёт MenuSceneResolver root или игрока и окончания SceneService transition, прежде чем запускать XR. Intro больше не захватывается runtime как полноценная VR-сцена. Целенаправленный native test после правки: первая привязка SceneMenu, display=True, renderPasses=2, camera stereoEnabled=True. Проверка сборки/static audit без ошибок: 1855 ссылок и 19 imports. Решение проблемы в шлеме пока не подтверждено пользователем; качество/видимость меню также остаются отдельной проверкой.
 
 Добавлена диагностическая команда views: камеры, canvas, активные graphics и состояние stereo render, без изменения сцены/расположения UI. Во время проверки перезапускалась только установленная NeuroMita по разрешённому пользователем VR-тесту.
+
+## Animated menu camera projection: 2026-10-17
+
+The previous validation host also reproduced a frozen headset image after its stereo intro. SceneMenu's camera animation clips (CameraMenu Start and CameraMenuAlternative Idle) animate near clip plane to -1, matching the original orthographic menu. Setting perspective and near=0.02 only during rig binding allowed that animation to overwrite the VR projection. The captured stereo projection had m22=-0.96078 and m23=1.96078, consistent with near=-1/far=50.
+
+VrPlayerRig now retains near=0.02, perspective and both-eye output during pose application (Update, LateUpdate and the existing pre-cull hook), including when tracking is unavailable. Camera/light animations stay enabled. Restore still returns the saved camera parameters when VR relinquishes the camera. No host or modding API changes.
+
+Built against validation host 46d89dce: zero build warnings/errors; static interop audit 1874 reachable references, 19 native imports, no unresolved references/missing exports. Fresh comparison run 20261017-224509 reached CrazyHouse; capture game-194622.png contains the apartment, pause menu and VR settings rather than black output. Input logs record movement and pause. Headset acceptance and repeating the test on the clean public release remain pending; these observations alone do not close all frozen-frame causes.

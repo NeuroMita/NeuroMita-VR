@@ -284,6 +284,9 @@ namespace NeuroMita.VR
         private void ApplyPose()
         {
             if (eye == null || !VrRuntime.IsActive) return;
+            eye.nearClipPlane = 0.02f;
+            eye.orthographic = false;
+            eye.stereoTargetEye = StereoTargetEyeMask.Both;
             TryCreateMenuStage();
             HeadTracked = ReadPose(XRNode.Head, out var headPosition, out var headRotation);
             if (!HeadTracked)
