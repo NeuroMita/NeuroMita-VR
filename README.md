@@ -21,10 +21,10 @@
 - [Подготовка к публикации](docs/publication.md).
 - [Сторонние зависимости](THIRD_PARTY_NOTICES.md).
 
-Исходники общей игровой VR-части находятся отдельно: [VinerX/NeuroMita-Unity, codex/neuromita-vr](https://github.com/VinerX/NeuroMita-Unity/tree/codex/neuromita-vr). Runtime-проект компилирует их через UnityProjectDir. Репозиторий мода не содержит копию игры.
+Игровые VR-компоненты находятся в src/NeuroMita.VR.Runtime/Gameplay: это самостоятельная версия для мода, первоначально перенесённая из [VR-ветки Unity](https://github.com/VinerX/NeuroMita-Unity/tree/codex/neuromita-vr). Сборка DLL больше не читает C# из Unity-checkout. Unity-ветка остаётся полигоном и источником сравнения; происхождение перенесённых файлов описано в docs/source-provenance.md.
 
 - src/NeuroMitaVRmod — BepInEx bootstrap и настройки.
-- src/NeuroMita.VR.Runtime — IL2CPP injection, native OpenXR backend и адаптеры общей VR-логики.
+- src/NeuroMita.VR.Runtime — IL2CPP injection, native OpenXR backend, адаптеры и собственная копия игровой VR-логики.
 - src/NeuroMita.XR.Probe — независимая диагностика.
 - tools/Package-VrMod.ps1 — игровой ZIP; tools/Start-VrMod.ps1 — запуск установленного мода.
 - tools/Package-XrProbe.ps1 — отдельный диагностический ZIP.
@@ -32,3 +32,4 @@
 Билды игры, BepInEx, interop DLL, SDK, ZIP, локальные настройки и сырые логи игнорируются Git. Remote пока не настроен, репозиторий остаётся локальным.
 
 Собственные исходники мода — [MIT](LICENSE). Внешние исходники Unity-проекта, его ресурсы и сторонние зависимости сохраняют свои лицензии. MIT этого репозитория на них не распространяется.
+Текущие изменения проверены только статически: компиляция и IL2CPP metadata/native export audit. Запуск игры, Editor Play Mode и XR ожидает отдельного разрешения владельца. См. docs/static-audit.md.

@@ -1,28 +1,25 @@
-# Сборка для разработки
+# Сборка и статические проверки
 
-Нужны .NET SDK с net6.0, отдельная копия совместимого Windows x64 IL2CPP host с BepInEx 6 и уже сгенерированными interop DLL, а также Unity-проект с веткой codex/neuromita-vr. Проверенный Unity: 6000.3.12f1; OpenXR: 1.16.1.
-
-Используйте generated interop именно своего EXE. Managed Editor DLL не заменяют interop. Игровая VR-логика компилируется из внешнего checkout, а адаптеры, injection и native OpenXR backend находятся здесь.
+Runtime мода самостоятелен: Gameplay, injection и native OpenXR backend хранятся здесь. Для сборки DLL не требуется UnityProjectDir или запущенный Editor. Нужны .NET SDK, совместимый Windows x64 IL2CPP host с BepInEx 6 и generated interop именно этого host.
 
     dotnet build .\src\NeuroMitaVRmod\NeuroMitaVRmod.csproj -c Release
-    dotnet build .\src\NeuroMita.VR.Runtime\NeuroMita.VR.Runtime.csproj -c Release -p:HostDirectory='D:\Games\NeuroMita-Test' -p:UnityProjectDir='D:\Dev\NeuroMita-Unity'
+    dotnet build .\src\NeuroMita.VR.Runtime\NeuroMita.VR.Runtime.csproj -c Release -p:HostDirectory='D:\Games\NeuroMita-Test'
 
-Для asset bundle откройте Unity-проект и через Unity MCP execute_code вызовите:
+Проверенный host: 46d89dce1, Unity 6000.3.12f1, BepInEx 6.0.0-be.788, Il2CppInterop 1.5.3. Подстановка Editor DLL вместо interop не допускается.
 
-    return NeuroMita.VR.Editor.VrModAssetBuild.Build();
+Офлайн-аудит на .NET 8 читает метаданные и PE export tables; он не загружает Unity/OpenXR библиотеки для исполнения:
 
-Результат: Temp/VrModAssets/neuromita-vr-assets. AssetBundle содержит существующие меши кистей и материалы с shader dependencies; Unity не должен собирать для этого весь player. Перед публичной раздачей проверьте права на эти ресурсы отдельно от MIT собственных исходников мода.
+    dotnet run --project .\tools\InteropAudit\InteropAudit.csproj -c Release -p:HostDirectory='D:\Games\NeuroMita-Test' -- '.\src\NeuroMita.VR.Runtime\bin\Release\net6.0\NeuroMita.VR.Runtime.dll' 'D:\Games\NeuroMita-Test'
 
-Затем соберите игровой пакет:
+Аудит ищет достижимые Method unstripping failed stubs, неразрешённые ссылки и отсутствующие native exports. Глубина транзитивных вызовов ограничена шестью; reflection, реальное поведение Unity bindings и корректность ABI он полностью не доказывает. Это дополнительная проверка, не замена игровому запуску.
 
-    .\tools\Package-VrMod.ps1 -UnityProject 'D:\Dev\NeuroMita-Unity' -HostDirectory 'D:\Games\NeuroMita-Test'
+Для игрового ZIP требуются отдельно уже собранный neuromita-vr-assets и официальный пакет Unity OpenXR 1.16.1:
 
-ZIP появляется в dist, host не меняется. Пакет включает bootstrap/runtime DLL, AssetBundle, native OpenXR и manifest, уведомления и запускатель. Игра, BepInEx и interop в архив не включаются. В receipt сохраняется hash Unity-checkout и признак незакоммиченной VR-логики; для повторяемого checkpoint используйте чистую зафиксированную ревизию.
+    .\tools\Package-VrMod.ps1 -HostDirectory 'D:\Games\NeuroMita-Test' -AssetBundle 'D:\Artifacts\neuromita-vr-assets' -OpenXRPackage 'D:\Dependencies\com.unity.xr.openxr'
 
-Диагностика собирается отдельно:
+Скрипт не запускает Unity и не меняет установленный host. По-прежнему можно передать -UnityProject для поиска уже имеющихся Temp/VrModAssets и Library/PackageCache; это только источник артефактов, не C#-зависимость. Пока bundle сам не поддерживается отдельным asset-проектом, его можно пересобрать в полигоне через Unity MCP: return NeuroMita.VR.Editor.VrModAssetBuild.Build();. Такой вызов требует разрешения на Unity-операции и в текущий статический проход не выполнялся.
 
-    .\tools\Package-XrProbe.ps1 -UnityProject 'D:\Dev\NeuroMita-Unity' -HostDirectory 'D:\Games\NeuroMita-Test'
+Игра, BepInEx и interop в ZIP не включаются. Receipt содержит ревизию самого мода и признак незакоммиченных исходников. Игровой пакет требует ручной приёмки в шлеме; сейчас запуск ожидает отдельного разрешения пользователя.
 
-Не запускайте XR probe и игровой VR backend одновременно. Install guide для диагностики остаётся отдельным; игровой запуск описан в gameplay-package.md.
-
-Не коммитьте SDK, host, BepInEx, interop, bin/obj/dist, архивы, IDE/env/private настройки и сырые логи. Remote этого репозитория пока не настроен по решению владельца. Основные исходники распространяются под MIT; зависимости и ресурсы сохраняют отдельные лицензии.
+SDK, host, interop, bin/obj/dist, архивы, env/private настройки и сырые логи остаются вне Git. Происхождение Gameplay-компонентов описано в source-provenance.md.
+Повтор всего статического набора: .\tools\Test-Static.ps1 -HostDirectory 'D:\Games\NeuroMita-Test'. Запуск игры в этот скрипт не включён.

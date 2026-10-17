@@ -13,6 +13,7 @@ namespace NeuroMita.VR
         private delegate void NativeEvent(int kind, ulong payload);
         private readonly NativeEvent callback;
         private static bool resolverInstalled;
+        private bool callbacksInstalled;
         private bool loaded, initialized, requested, ready, begun, stopping, disposed, actionsAttached;
         public XRDisplaySubsystem Display { get; private set; }
         public XRInputSubsystem Input { get; private set; }
@@ -29,7 +30,12 @@ namespace NeuroMita.VR
                         ? NativeLibrary.Load(Path.Combine(path, "UnityOpenXR.dll")) : IntPtr.Zero);
                 resolverInstalled = true;
             }
+            var existing = new Il2CppSystem.Collections.Generic.List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(existing);
+            foreach (var display in existing)
+                if (display.running) throw new InvalidOperationException("Another XR display is already running; the VR mod will not take over its native session.");
             SetCallbacks(callback);
+            callbacksInstalled = true;
             SetRenderMode(0);
             SetSuccessfullyInitialized(false);
             SetApplicationInfo(Application.productName + " VR mod", "0.1.0", 1, Application.unityVersion);
@@ -105,7 +111,8 @@ namespace NeuroMita.VR
             if (initialized) Cleanup(DestroySession, "session destroy");
             Cleanup(() => Input?.Destroy(), "input destroy");
             Cleanup(() => Display?.Destroy(), "display destroy");
-            Cleanup(() => SetCallbacks(null), "callback detach");
+            if (callbacksInstalled) Cleanup(() => SetCallbacks(null), "callback detach");
+            callbacksInstalled = false;
             Input = null;
             Display = null;
             initialized = false;

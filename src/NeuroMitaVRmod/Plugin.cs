@@ -11,11 +11,13 @@ namespace NeuroMitaVRmod;
 [BepInPlugin("vinerx.neuromita.vr", "NeuroMita VR", "0.1.0")]
 public sealed class Plugin : BasePlugin
 {
+    private Type bootstrap;
     private Type runtime;
     private bool started;
 
     public override void Load()
     {
+        if (Environment.GetCommandLineArgs().Any(argument => string.Equals(argument, "--no-vr", StringComparison.OrdinalIgnoreCase))) return;
         if (!Config.Bind("General", "Enabled", true, "Enable the external VR runtime on startup").Value) return;
         try
         {
@@ -24,7 +26,10 @@ public sealed class Plugin : BasePlugin
             if (bridge == null || bridge.GetMethod("OpenSession") == null)
                 throw new InvalidOperationException("This game build does not contain the external control API. Apply the API commits and rebuild the host first.");
             Assembly.Load("Unity.InputSystem");
-            string path = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location)!, "NeuroMita.VR.Runtime.dll");
+            string directory = Path.GetDirectoryName(GetType().Assembly.Location)!;
+            if (!File.Exists(Path.Combine(directory, "neuromita-vr-assets")))
+                throw new FileNotFoundException("VR asset bundle is missing; install the complete gameplay mod package.");
+            string path = Path.Combine(directory, "NeuroMita.VR.Runtime.dll");
             if (!File.Exists(path)) throw new FileNotFoundException("External IL2CPP runtime module is missing. The bootstrap alone cannot provide VR.", path);
             var module = Assembly.LoadFrom(path);
             runtime = module.GetType("NeuroMita.VR.VrRuntime", true);
@@ -44,7 +49,8 @@ public sealed class Plugin : BasePlugin
                 }
                 else ClassInjector.RegisterTypeInIl2Cpp(type);
             }
-            module.GetType("NeuroMita.VR.VrExternalBootstrap", true)!.GetMethod("Schedule")!.Invoke(null, null);
+            bootstrap = module.GetType("NeuroMita.VR.VrExternalBootstrap", true)!;
+            bootstrap.GetMethod("Schedule")!.Invoke(null, null);
             started = true;
             Log.LogInfo("External VR runtime requested; OpenXR status is reported by the runtime. Headset readiness is not implied.");
         }
@@ -85,6 +91,7 @@ public sealed class Plugin : BasePlugin
 
     public override bool Unload()
     {
+        bootstrap?.GetMethod("Cancel")?.Invoke(null, null);
         if (started)
         {
             runtime?.GetMethod("StopVr", BindingFlags.Public | BindingFlags.Static)?.Invoke(null, null);

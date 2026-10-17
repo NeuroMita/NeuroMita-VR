@@ -9,15 +9,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="*.cs" />
-    <Compile Include="$(UnityProjectDir)\Assets\Scripts\NeuroMitaScripts\VR\**\*.cs" Exclude="$(UnityProjectDir)\Assets\Scripts\NeuroMitaScripts\VR\Editor\**\*.cs" />
+    <Compile Include="Gameplay\**\*.cs" />
     <Reference Include="$(HostDirectory)\BepInEx\interop\*.dll" />
     <Reference Include="Il2CppInterop.Runtime"><HintPath>$(HostDirectory)\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath></Reference>
       <Reference Include="BepInEx.Unity.IL2CPP"><HintPath>$(HostDirectory)\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath></Reference>
   </ItemGroup>
   <Target Name="ValidateHost" BeforeTargets="ResolveReferences">
     <Error Condition="'$(HostDirectory)' == ''" Text="Pass -p:HostDirectory=... for the matching game with generated BepInEx interop." />
-    <Error Condition="'$(UnityProjectDir)' == ''" Text="Pass -p:UnityProjectDir=... for the separate Unity VR source checkout." />
-    <Error Condition="!Exists('$(UnityProjectDir)\Assets\Scripts\NeuroMitaScripts\VR\VrRuntime.cs')" Text="The selected Unity checkout does not contain the VR source runtime." />
     <Error Condition="!Exists('$(HostDirectory)\BepInEx\interop\Assembly-CSharp.dll')" Text="Generate IL2CPP interop from the matching host executable first." />
   </Target>
 </Project>

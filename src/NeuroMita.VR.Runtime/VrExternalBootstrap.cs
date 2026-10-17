@@ -5,21 +5,32 @@ namespace NeuroMita.VR
 {
     public sealed class VrExternalBootstrap : MonoBehaviour
     {
-        private bool requested;
+        private static VrExternalBootstrap pending;
+        private bool cancelled;
         public VrExternalBootstrap(IntPtr pointer) : base(pointer) { }
         public static void Schedule()
         {
+            if (pending != null) return;
             var root = VrObject.Create("NeuroMita external VR bootstrap");
             DontDestroyOnLoad(root);
-            root.AddComponent<VrExternalBootstrap>();
+            pending = root.AddComponent<VrExternalBootstrap>();
+        }
+        public static void Cancel()
+        {
+            if (pending == null) return;
+            pending.cancelled = true;
+            Destroy(pending.gameObject);
+            pending = null;
         }
         private void Update()
         {
-            if (requested || Time.realtimeSinceStartup < 5f) return;
-            requested = true;
+            if (cancelled || Time.realtimeSinceStartup < 5f) return;
+            cancelled = true;
+            pending = null;
             try { VrRuntime.StartVr(); }
             catch (Exception exception) { Debug.LogError(exception.ToString()); }
             Destroy(gameObject);
         }
+        private void OnDestroy() { if (pending == this) pending = null; }
     }
 }

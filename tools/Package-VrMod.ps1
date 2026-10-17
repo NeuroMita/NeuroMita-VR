@@ -1,5 +1,7 @@
 param(
-    [Parameter(Mandatory=$true)][string]$UnityProject,
+    [string]$UnityProject,
+    [string]$OpenXRPackage,
+    [string]$AssetBundle,
     [Parameter(Mandatory=$true)][string]$HostDirectory,
     [string]$GameDataName = 'NeuroMita_Data'
 )
@@ -8,14 +10,19 @@ if ([IO.Path]::GetFileName($GameDataName) -ne $GameDataName) { throw 'GameDataNa
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $dotnet = Join-Path $repoRoot '.tools/dotnet/dotnet.exe'
 if (!(Test-Path -LiteralPath $dotnet)) { $dotnet = (Get-Command dotnet -ErrorAction Stop).Source }
-$bundle = Join-Path $UnityProject 'Temp/VrModAssets/neuromita-vr-assets'
-if (!(Test-Path -LiteralPath $bundle -PathType Leaf)) { throw 'Build the VR asset bundle through Unity MCP first; see docs/development.md.' }
-$packages = @(Get-ChildItem -LiteralPath (Join-Path $UnityProject 'Library/PackageCache') -Directory | Where-Object Name -Like 'com.unity.xr.openxr@*')
-if ($packages.Count -ne 1) { throw 'Expected one resolved Unity OpenXR package.' }
-$package = $packages[0].FullName
+if (!$AssetBundle -and $UnityProject) { $AssetBundle = Join-Path $UnityProject 'Temp/VrModAssets/neuromita-vr-assets' }
+if (!$AssetBundle -or !(Test-Path -LiteralPath $AssetBundle -PathType Leaf)) { throw 'Pass -AssetBundle for the prebuilt VR bundle. This script never starts Unity.' }
+$bundle = (Resolve-Path -LiteralPath $AssetBundle).Path
+if (!$OpenXRPackage -and $UnityProject) {
+    $packages = @(Get-ChildItem -LiteralPath (Join-Path $UnityProject 'Library/PackageCache') -Directory | Where-Object Name -Like 'com.unity.xr.openxr@*')
+    if ($packages.Count -ne 1) { throw 'Expected one resolved Unity OpenXR package.' }
+    $OpenXRPackage = $packages[0].FullName
+}
+if (!$OpenXRPackage) { throw 'Pass -OpenXRPackage for Unity OpenXR 1.16.1 native files and notices.' }
+$package = (Resolve-Path -LiteralPath $OpenXRPackage).Path
 $version = (Get-Content -LiteralPath (Join-Path $package 'package.json') -Raw | ConvertFrom-Json).version
 foreach ($project in @('NeuroMitaVRmod','NeuroMita.VR.Runtime')) {
-    & $dotnet build (Join-Path $repoRoot "src/$project/$project.csproj") -c Release --nologo "-p:HostDirectory=$HostDirectory" "-p:UnityProjectDir=$UnityProject"
+    & $dotnet build (Join-Path $repoRoot "src/$project/$project.csproj") -c Release --nologo "-p:HostDirectory=$HostDirectory"
     if ($LASTEXITCODE -ne 0) { throw "Build failed: $project" }
 }
 $staging = Join-Path $repoRoot ('dist/vr-mod-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -38,9 +45,10 @@ Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE'),(Join-Path $repoRoot 'THI
 $files = @(Get-ChildItem -LiteralPath $staging -File -Recurse | ForEach-Object {
     @{ path=$_.FullName.Substring($staging.Length+1).Replace('\','/'); sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
 })
-$sourceRevision = (& git -C $UnityProject rev-parse HEAD).Trim()
-$sourceDirty = [bool](& git -C $UnityProject status --porcelain -- Assets/Scripts/NeuroMitaScripts/VR)
-@{ kind='experimental-gameplay-vr'; openXRVersion=$version; fullVrRuntime=$true; headsetAcceptance=$false; unitySourceRevision=$sourceRevision; unitySourceDirty=$sourceDirty; files=$files } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $staging 'package-receipt.json') -Encoding utf8
+$sourceRevision = (& git -C $repoRoot rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0) { throw 'Cannot read mod source revision.' }
+$sourceDirty = [bool](& git -C $repoRoot status --porcelain -- src tools)
+@{ kind='experimental-gameplay-vr'; openXRVersion=$version; fullVrRuntime=$true; headsetAcceptance=$false; modSourceRevision=$sourceRevision; modSourceDirty=$sourceDirty; files=$files } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $staging 'package-receipt.json') -Encoding utf8
 $archive = "$staging.zip"
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive
 Write-Output $archive

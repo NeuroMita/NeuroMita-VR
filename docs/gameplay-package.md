@@ -14,4 +14,4 @@ Bootstrap по умолчанию включает VR и через нескол
 
 Пакет содержит bootstrap DLL, runtime DLL, AssetBundle, нативные UnityOpenXR/openxr_loader и subsystem manifest. Игра, BepInEx и generated interop в ZIP не входят. Уведомления Unity OpenXR сохранены в Notices. Перед публичной раздачей ресурсов из Unity-проекта отдельно проверьте права на них: MIT собственных адаптеров их не перелицензирует.
 
-Ограничения: нет полной проверки house/паузы/смартфона/радио в шлеме через мод; native controller profile пока только Oculus Touch. Старый API-only host не предоставляет новые TV HUD suppression hooks. Если host вырезал tracking-origin notifications, после смены origin используйте ручной recenter.
+Ограничения: нет полной проверки house/паузы/смартфона/радио в шлеме через мод; native controller profile пока только Oculus Touch. Старый API-only host не предоставляет новые TV HUD suppression hooks. Подписка tracking-origin notifications исправлена статически через native delegate field; проверка в игре ещё не выполнена. Ручной recenter остаётся доступным.
