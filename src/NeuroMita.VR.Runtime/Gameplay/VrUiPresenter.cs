@@ -87,6 +87,7 @@ namespace NeuroMita.VR
             if (pause != null && !pause.isActiveAndEnabled) pause = null;
             if (pauseCanvas != pause) CancelInput();
             pauseCanvas = pause;
+            RefreshPauseBackdrop(pause);
             if (pause == null)
             {
                 foreach (var mask in chatMasks.Values)
@@ -344,6 +345,7 @@ namespace NeuroMita.VR
                     panel.backdropView?.Refresh();
                 }
             }
+            RefreshPauseBackdrop(pauseCanvas);
             EnsurePointerUpdated();
         }
 
@@ -474,7 +476,8 @@ namespace NeuroMita.VR
             lastHeld = held;
             if (laser != null)
             {
-                laser.enabled = rig.PointerHandTracked;
+                bool showPointer = NeuroMita.Settings.GameSettingsService.Instance?.ShowCrosshair ?? true;
+                laser.enabled = rig.PointerHandTracked && showPointer;
                 laser.SetPosition(0, ray.origin);
                 laser.SetPosition(1, end);
             }
@@ -562,6 +565,7 @@ namespace NeuroMita.VR
                 if (panel.scaler != null) panel.scaler.enabled = panel.scalerEnabled;
             }
             panels.Clear();
+            ReleasePauseBackdrop();
             if (laserMaterial != null)
             {
                 if (Application.isPlaying) Destroy(laserMaterial);

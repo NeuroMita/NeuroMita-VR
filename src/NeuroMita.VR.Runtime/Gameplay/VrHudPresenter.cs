@@ -19,6 +19,10 @@ namespace NeuroMita.VR
         private VrUiPresenter pointer;
         private GameUIRoot owner;
         private VrUiSurface interaction;
+        private VrUiSurface mood;
+        private CanvasGroup reticleMask;
+        private float reticleAlpha;
+        private bool reticleMaskCreated;
         private MitaInteractionPanel interactionPanel;
         private VrUiSurface roster;
         private VrUiSurface desktopHotbar;
@@ -37,6 +41,15 @@ namespace NeuroMita.VR
             Restore();
             owner = ui;
             if (owner == null) return;
+            var desktopCrosshair = owner.GetComponentInChildren<CrosshairUIController>(true);
+            if (desktopCrosshair != null)
+            {
+                reticleMask = desktopCrosshair.GetComponent<CanvasGroup>();
+                reticleMaskCreated = reticleMask == null;
+                if (reticleMaskCreated) reticleMask = desktopCrosshair.gameObject.AddComponent<CanvasGroup>();
+                reticleAlpha = reticleMask.alpha;
+                reticleMask.alpha = 0f;
+            }
             var miniInventory = owner.GetComponentInChildren<InventoryMiniUI>(true);
             if (miniInventory?.inventoryUIParent != null && miniInventory.inventoryUIParent.GetComponent<RectTransform>() is { } hotbar)
             {
@@ -50,7 +63,7 @@ namespace NeuroMita.VR
                 roster.Canvas.enabled = false;
             }
             var stats = owner.GetComponentInChildren<MitaUnitFrame>(true);
-            if (stats != null) PresentHud(stats.GetComponent<RectTransform>(), new Vector2(-0.055f, 0f));
+            if (stats != null) mood = new VrUiSurface(stats.GetComponent<RectTransform>(), rig.Eye, pointer);
             if (owner.MicrophoneIndicator != null)
                 PresentHud(owner.MicrophoneIndicator.GetComponent<RectTransform>(), new Vector2(0.13f, 0f));
             interactionPanel = owner.MitaInteractionPanel;
@@ -78,7 +91,8 @@ namespace NeuroMita.VR
                 float width = view.Surface.View != null && view.Surface.View.GetComponent<AsrMicrophoneIndicator>() != null ? 0.06f : 0.24f;
                 view.Surface.Place(center + facing * (Vector3)(view.Offset * factor), facing, width * factor, rig.Eye);
             }
-            if (interaction != null && interactionPanel != null)
+            if (mood?.Canvas != null) mood.Canvas.enabled = false;
+            if (interaction != null && interactionPanel != null && interactionPanel.isActiveAndEnabled)
             {
                 var actor = interactionPanel.CurrentActor;
                 if (actor != null)
@@ -86,8 +100,16 @@ namespace NeuroMita.VR
                     var headTarget = MitaAI.MitaAttentionTargetResolver.ResolveHead(actor);
                     Vector3 head = headTarget != null ? headTarget.position :
                         (actor.PersonObject != null ? actor.PersonObject.transform.position : actor.transform.position) + Vector3.up * 1.4f;
-                    Quaternion actorFacing = FaceEye(head, eye);
-                    Vector3 position = head + actorFacing * new Vector3(0.5f, -0.3f, 0f);
+                    var body = actor.PersonObject != null ? actor.PersonObject.transform : actor.transform;
+                    Vector3 side = Vector3.ProjectOnPlane(body.right, Vector3.up).normalized;
+                    if (side.sqrMagnitude < 0.1f) side = Vector3.right;
+                    Vector3 position = head + side * 0.55f + Vector3.down * 0.3f;
+                    if (mood?.Canvas != null)
+                    {
+                        mood.Canvas.enabled = true;
+                        Vector3 above = head + Vector3.up * 0.3f;
+                        mood.Place(above, FaceEye(above, eye), 0.42f, rig.Eye);
+                    }
                     interaction.Place(position, FaceEye(position, eye), 0.55f, rig.Eye);
                 }
             }
@@ -106,6 +128,7 @@ namespace NeuroMita.VR
                 refreshAt = Time.unscaledTime + 0.25f;
                 foreach (var view in views) view.Surface.RefreshGeometry();
                 interaction?.RefreshGeometry();
+                mood?.RefreshGeometry();
             }
             ApplyLayout(VrRuntime.Settings?.VrHudOnWrist != false);
         }
@@ -116,8 +139,16 @@ namespace NeuroMita.VR
 
         public void Restore()
         {
+            if (reticleMask != null)
+            {
+                reticleMask.alpha = reticleAlpha;
+                if (reticleMaskCreated) Destroy(reticleMask);
+            }
+            reticleMask = null;
             for (int i = views.Count - 1; i >= 0; i--) views[i].Surface.Dispose();
             views.Clear();
+            mood?.Dispose();
+            mood = null;
             roster?.Dispose();
             roster = null;
             desktopHotbar?.Dispose();
