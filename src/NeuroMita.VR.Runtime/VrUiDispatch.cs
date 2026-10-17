@@ -14,6 +14,13 @@ namespace NeuroMita.VR
         public static bool Execute<T>(GameObject target, BaseEventData data, ExecuteEvents.EventFunction<T> handler) where T : Il2CppObjectBase
         {
             if (target == null) return false;
+            if (typeof(T) == typeof(IPointerUpHandler) && target.GetComponent<NeuroMita.Menu.MenuButtonBase>() != null)
+            {
+                var release = data.Cast<PointerEventData>();
+                if (!release.eligibleForClick || release.dragging ||
+                    ExecuteEvents.GetEventHandler<IPointerUpHandler>(release.pointerCurrentRaycast.gameObject) != target)
+                    return true;
+            }
             var relay = Supports<T>() ? target.GetComponent<VrToolkitInputRelay>() : null;
             if (relay == null) return ExecuteEvents.Execute(target, data, handler);
             var pointer = data.Cast<PointerEventData>();
