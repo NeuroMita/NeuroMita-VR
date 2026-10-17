@@ -41,7 +41,13 @@ foreach ($project in @('NeuroMitaVRmod','NeuroMita.VR.Runtime')) {
 }
 Copy-Item -LiteralPath $bundle -Destination $plugins
 Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/source-provenance.md') -Destination (Join-Path $staging 'SOURCE_PROVENANCE.md')
-Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/gameplay-package.md') -Destination (Join-Path $staging 'README.md')
+Copy-Item -LiteralPath (Join-Path $repoRoot 'README.md'),(Join-Path $repoRoot 'README.en.md') -Destination $staging
+$packageDocs = Join-Path $staging 'docs'
+New-Item -ItemType Directory -Path $packageDocs -Force | Out-Null
+Copy-Item -Path (Join-Path $repoRoot 'docs/*.md') -Destination $packageDocs
+$assetDocs = Join-Path $staging 'assets'
+New-Item -ItemType Directory -Path $assetDocs -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $repoRoot 'assets/README.md') -Destination $assetDocs
 Copy-Item -LiteralPath (Join-Path $repoRoot 'tools/Start-VrMod.ps1') -Destination $staging
 Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE'),(Join-Path $repoRoot 'THIRD_PARTY_NOTICES.md') -Destination $staging
 $files = @(Get-ChildItem -LiteralPath $staging -File -Recurse | ForEach-Object {

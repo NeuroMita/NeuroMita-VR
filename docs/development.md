@@ -5,7 +5,7 @@ Runtime мода самостоятелен: Gameplay, injection и native OpenX
     dotnet build .\src\NeuroMitaVRmod\NeuroMitaVRmod.csproj -c Release
     dotnet build .\src\NeuroMita.VR.Runtime\NeuroMita.VR.Runtime.csproj -c Release -p:HostDirectory='D:\Games\NeuroMita-Test'
 
-Проверенный host: 46d89dce1, Unity 6000.3.12f1, BepInEx 6.0.0-be.788, Il2CppInterop 1.5.3. Подстановка Editor DLL вместо interop не допускается.
+Проверенные hosts: публичный v2026.10.15 и отдельный validation 46d89dce1, Unity 6000.3.12f1, BepInEx 6.0.0-be.788, Il2CppInterop 1.5.3. Подстановка Editor DLL вместо interop не допускается.
 
 Офлайн-аудит на .NET 8 читает метаданные и PE export tables; он не загружает Unity/OpenXR библиотеки для исполнения:
 
