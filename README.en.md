@@ -17,10 +17,12 @@ Checked on October 17, 2026:
 | Pause menu and VR Settings | Implemented; panels were captured on the validation host. Full settings acceptance is still pending |
 | Mita action panel and HUD | Fixes for UI layers, IL2CPP geometry and head anchoring are being validated |
 | Music player | The complete interface renders into a texture; VR placement, visibility and interaction are still being improved |
-| TV / YouTube | VR playback and exit buttons exist; the full interface, search and text input are not fully covered |
+| TV / YouTube | Full browser projection and VR text entry are implemented; headset acceptance of search, settings and exit is pending |
 | QTEs, Mita grabs, resting, bat and other mechanics | Incomplete VR support; some scenarios may still need a keyboard or be awkward/unavailable |
 
 Working menu and apartment rendering does not mean the entire game is playable with controllers. See the [interaction audit and acceptance checklist](docs/vr-interaction-audit.md) and [technical checkpoint history](docs/checkpoint.md); these detailed documents currently use Russian and/or English.
+
+October 18 UI batch: Mita action buttons are anchored to her body, with stats above her head during interaction. Panel obstacle checks, projected easel tools and Russian VR settings labels are implemented but still await headset acceptance. Controller drawing and integration into the standard settings page remain unfinished. Full TV browser projection and Toolkit text entry are also awaiting acceptance.
 
 ## Compatibility
 
