@@ -521,6 +521,7 @@ namespace NeuroMita.VR
 
         private void Release()
         {
+            if (pointer != null) pointer.eligibleForClick = false;
             ReleasePress(null);
             if (hover != null && pointer != null) VrUiDispatch.ExecuteHierarchy(hover, pointer, ExecuteEvents.pointerExitHandler);
             hover = null;
