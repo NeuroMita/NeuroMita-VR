@@ -227,6 +227,7 @@ namespace NeuroMita.VR
 
         private void OnActiveSceneChanged(Scene previous, Scene current)
         {
+            Input?.ResetPosture();
             VrConsoleAccess.Clear();
             nextDiscovery = 0f;
             Presenter?.CancelInput();
@@ -347,6 +348,8 @@ namespace NeuroMita.VR
             string text = LocalizationManager.GetTableString(key);
             if (string.IsNullOrWhiteSpace(text) || text == key)
                 text = "<b>VR controls</b>\nLeft stick: move; right stick: turn\nLeft Y: pause / back / close player\nRight stick click: blink when active, otherwise show / hide hints\nRight trigger: click / drag UI\nRight grip: interact\nLeft trigger: inventory; tap left X: chat, hold 3s: console\nRight A: jump / submit chat; right B: action menu\nHold both stick clicks: recenter";
+            if (!text.Contains("Right stick down:") && !text.Contains("Правый стик вниз:"))
+                text += "\n" + VrSettingsText.Pick("Right stick down: toggle crouch", "Правый стик вниз: присесть / встать");
             return text
                 .Replace("Right trigger: click / drag UI", "Aim the cyan ray at UI\nRight trigger: click / drag UI")
                 .Replace("Правый триггер: выбор / перетаскивание", "Цельтесь лучом в интерфейс\nПравый триггер: выбор / перетаскивание");

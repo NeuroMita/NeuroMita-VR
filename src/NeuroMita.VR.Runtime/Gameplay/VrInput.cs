@@ -22,6 +22,9 @@ namespace NeuroMita.VR
         private bool sprintToggled;
         private bool disposed;
         private readonly VrButtonState crouch = new VrButtonState();
+        private readonly VrCrouchToggle crouchToggle = new VrCrouchToggle();
+        private bool physicalCrouched;
+        private IntPtr crouchPlayer;
 
         public bool IsActive => !disposed && VrRuntime.IsActive && ReferenceEquals(VrRuntime.Input, this);
         public bool AllowUnfocusedInput => true;
@@ -79,9 +82,6 @@ namespace NeuroMita.VR
             bool sprintTracking = VrRuntime.Rig?.HeadTracked == true && VrRuntime.Rig.LeftHandTracked;
             var input = AppServices.GetOrNull<InputManager>();
             var rig = VrRuntime.Rig;
-            bool canCrouch = VrRuntime.IsActive && rig?.HeadTracked == true && rig.Player != null &&
-                !rig.Player.InputLocked && Time.timeScale > 0f && input?.CurrentState == InputManager.InputState.Gameplay;
-            crouch.Sample(canCrouch && VrPosePolicy.IsCrouched(crouch.Held, rig.TrackedHeightDelta), sampledFrame);
             if (!sprintTracking || Time.timeScale <= 0f || input?.CurrentState != InputManager.InputState.Gameplay)
                 sprintToggled = false;
             SampleDirections();
@@ -96,6 +96,37 @@ namespace NeuroMita.VR
                     sprintTracking && input?.CurrentState == InputManager.InputState.Gameplay)
                     sprintToggled = !sprintToggled;
             }
+            SampleCrouch(input, rig);
+        }
+
+        private void SampleCrouch(InputManager input, VrPlayerRig rig)
+        {
+            var player = rig?.Player;
+            IntPtr owner = player != null ? player.Pointer : IntPtr.Zero;
+            bool tracked = VrRuntime.IsActive && rig?.HeadTracked == true && player != null;
+            if (owner != crouchPlayer || !tracked || player?.Health?.IsDead == true || SceneService.IsTransitionInProgress)
+            {
+                ResetPosture();
+                crouchPlayer = owner;
+            }
+            else if (!rig.RightHandTracked) crouchToggle.Reset();
+            bool canCrouch = tracked && !player.InputLocked && player.Health?.IsDead != true && Time.timeScale > 0f
+                && input?.CurrentState == InputManager.InputState.Gameplay && !SceneService.IsTransitionInProgress;
+            physicalCrouched = canCrouch && VrPosePolicy.IsCrouched(physicalCrouched, rig.TrackedHeightDelta);
+            bool canToggle = canCrouch && rig.RightHandTracked && !player.MoveLocked && !VrQteInput.HasActiveQte
+                && player.Sequence?.IsPlaying != true && AppServices.GetOrNull<UIManager>()?.FocusedType == null
+                && player.GetComponent<NeuroMita.Player.PlayerSelfieController>()?.IsActive != true
+                && VrRuntime.Presenter?.HasUiTarget != true;
+            Vector2 axis = Turn;
+            crouchToggle.Sample(axis.x, axis.y, canToggle);
+            crouch.Sample(canCrouch && (physicalCrouched || crouchToggle.IsCrouched), sampledFrame);
+        }
+
+        internal void ResetPosture()
+        {
+            crouchToggle.Reset();
+            physicalCrouched = false;
+            crouchPlayer = IntPtr.Zero;
         }
 
         private void SampleDirections()
@@ -185,6 +216,7 @@ namespace NeuroMita.VR
             if (disposed) return;
             disposed = true;
             sprintToggled = false;
+            ResetPosture();
             map.Dispose();
         }
     }

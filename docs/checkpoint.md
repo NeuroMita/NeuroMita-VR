@@ -88,3 +88,10 @@ ResolveInteractionRay now validates the native canvas before accessing gameObjec
 Added VrBatSwing, VrBlinkInput, VrSnowballInput and VrDialogueContext in the external mod only. Updated RU/EN README and the interaction audit with bindings, source ownership, reset/cleanup behavior and unaccepted cases. No host/API/release source edits, no Unity operations, no player launch, scene command or hot replacement in the running player. Current player retains its previously installed runtime until a later explicitly scheduled restart/install.
 
 Build and public-host IL2CPP audit pass; native installation and headset behavior are still pending. Bat geometry is estimated from the held visual and needs actual swing tests; blink/help arbitration and snowball physics need live coverage. The dialogue hook preserves original event ids and request retry semantics without adding persistent pending events. Upcoming combined acceptance should cover the preceding console/TV/movement UI batch together with these interactions, rather than restarting for each small feature.
+
+
+## October 18 seated crouch and audit consolidation
+
+Right-stick downward gesture toggles crouch; left-stick sprint is preserved. Physical crouch hysteresis is independent of the toggle. UI hover/focus, selfie, QTE, sequence, movement lock and non-Gameplay states disarm the gesture until neutral. Scene/player/tracking/death resets clear the toggle. The host still owns Sit, collider and camera height; no teleport or direct capsule override was added. Twelve standalone policy checks are part of Test-Static. Actual seated camera/ceiling behavior remains unaccepted.
+
+Replaced the cumulative interaction audit with one current coverage map, explicit user-confirmed boundaries, remaining implementation gaps, pending acceptance and five selectable next-work directions. Historical diagnoses remain in Git. No live process/Unity/XR was launched or modified for this revision.

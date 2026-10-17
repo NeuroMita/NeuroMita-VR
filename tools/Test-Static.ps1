@@ -15,4 +15,6 @@ foreach ($project in @('NeuroMitaVRmod', 'NeuroMita.VR.Runtime')) {
     & $dotnet (Join-Path $repoRoot 'tools/InteropAudit/bin/Release/net8.0/InteropAudit.dll') $assembly $HostDirectory
     if ($LASTEXITCODE -ne 0) { throw "Static interop audit failed: $project" }
 }
+& $dotnet run --project (Join-Path $repoRoot 'tools/InputPolicyTests/InputPolicyTests.csproj') -c Release --nologo
+if ($LASTEXITCODE -ne 0) { throw 'Input policy checks failed.' }
 Write-Output 'Static checks passed. Unity, the game and XR were not started. Headset acceptance remains pending.'

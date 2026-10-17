@@ -26,6 +26,8 @@ October 18 UI batch: Mita action buttons are anchored to her body, with stats ab
 
 The October 18 static batch adds experimental physical bat swings, manual blinking with right-stick click while the blink mechanic is active, left-stick input for the TV Penguin / snowball game, and VR-device information in Mita's dialogue context. These features compile but have not been checked in a live process or headset yet. Select and hold the bat in the right hand, then slow it down before another strike. Automatic bat geometry detection and swing thresholds still need acceptance. While the blink mechanic is active, right-stick click blinks instead of toggling hints.
 
+Seated crouch: center the right stick, then push it down to toggle crouching; repeat to stand. No hold required. Left-stick click remains sprint. The gesture is disabled over UI, during selfie, QTEs and animation sequences; physical crouching remains supported. Software checks pass; headset acceptance is pending.
+
 ## Compatibility
 
 - Windows x64, IL2CPP, Unity **6000.3.12f1**.
