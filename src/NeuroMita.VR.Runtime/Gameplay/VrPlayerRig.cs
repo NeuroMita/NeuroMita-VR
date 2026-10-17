@@ -97,6 +97,7 @@ namespace NeuroMita.VR
             eye = camera;
             player = actor;
             restored = false;
+            VrDiagnostics.Mark("rig bind", "before poser");
             poser = actor != null ? NeuroMita.Player.Controllers.PlayerHandPoserController.Ensure(actor) : null;
             savedPosition = eye.transform.localPosition;
             savedRotation = eye.transform.localRotation;
@@ -105,7 +106,7 @@ namespace NeuroMita.VR
             savedOrthographic = eye.orthographic;
             cameraAnimator = actor == null ? eye.GetComponent<Animator>() : null;
             cameraAnimatorEnabled = cameraAnimator != null && cameraAnimator.enabled;
-            if (cameraAnimator != null) cameraAnimator.enabled = false;
+
             if (actor == null) menuStage = VrMenuStage.Create(eye);
             menuAnchor = eye.transform.position;
             menuRotation = Quaternion.Euler(0f, eye.transform.eulerAngles.y, 0f);
@@ -116,6 +117,7 @@ namespace NeuroMita.VR
             eye.stereoTargetEye = StereoTargetEyeMask.Both;
             leftHand = CreateHand("VR Left Controller");
             rightHand = CreateHand("VR Right Controller");
+            VrDiagnostics.Mark("rig bind", "before hand resources");
             if (player?.PersonRoot != null)
             {
                 SkinnedMeshRenderer source = null;
@@ -123,8 +125,11 @@ namespace NeuroMita.VR
                     if (renderer.sharedMesh != null && renderer.sharedMesh.name == "Arms") { source = renderer; break; }
                 if (source != null && VrAssets.Load<Mesh>("NeuroMitaVrLeftHand") != null && VrAssets.Load<Mesh>("NeuroMitaVrRightHand") != null)
                 {
+                    VrDiagnostics.Mark("rig bind", "before left proxy");
                     leftProxy = CreateProxy(leftHand, "Left", source.sharedMaterials);
+                    VrDiagnostics.Mark("rig bind", "before right proxy");
                     rightProxy = CreateProxy(rightHand, "Right", source.sharedMaterials);
+                    VrDiagnostics.Mark("rig bind", "before cloth contacts");
                     clothContacts = gameObject.AddComponent<VrClothHandContacts>();
                     clothContacts.Bind(leftProxy.ClothCollider, rightProxy.ClothCollider, player.transform);
                     touchTracker = gameObject.AddComponent<VrMitaTouchTracker>();
@@ -133,10 +138,12 @@ namespace NeuroMita.VR
                     handPhysics.Bind(this, leftProxy, rightProxy);
                 }
             }
+            VrDiagnostics.Mark("rig bind", "before tracking/render hooks");
             VrFrameHooks.BeforeRender += ApplyPose;
             inputSubsystem = VrRuntime.XrInput;
             if (inputSubsystem != null) VrHostEvents.Tracking(inputSubsystem, OnTrackingOriginUpdated, true);
             ApplyPose();
+            VrDiagnostics.Mark("rig bind", "before comfort");
             comfort = gameObject.AddComponent<VrComfortPresenter>();
             comfort.Bind(this);
         }
@@ -277,6 +284,7 @@ namespace NeuroMita.VR
         private void ApplyPose()
         {
             if (eye == null || !VrRuntime.IsActive) return;
+            TryCreateMenuStage();
             HeadTracked = ReadPose(XRNode.Head, out var headPosition, out var headRotation);
             if (!HeadTracked)
             {
@@ -297,6 +305,17 @@ namespace NeuroMita.VR
             RefreshItemMounts();
         }
 
+        private float nextMenuStage;
+        private void TryCreateMenuStage()
+        {
+            if (player != null || menuStage != null || Time.unscaledTime < nextMenuStage) return;
+            nextMenuStage = Time.unscaledTime + 0.25f;
+            menuStage = VrMenuStage.Create(eye);
+            if (menuStage == null) return;
+            menuAnchor = eye.transform.position;
+            menuRotation = Quaternion.Euler(0f, eye.transform.eulerAngles.y, 0f);
+            calibrated = false;
+        }
         private void ApplyTrackedHeadPose(Vector3 headPosition, Quaternion headRotation)
         {
             rawHeadPosition = headPosition;
@@ -310,6 +329,7 @@ namespace NeuroMita.VR
             var position = AnchorPosition + rotation * VrPosePolicy.HeadOffset(headPosition, reference);
             position.y += (VrRuntime.Settings?.VrHeightOffset ?? 0) * 0.01f;
             eye.transform.SetPositionAndRotation(position, rotation * headRotation);
+            menuStage?.HoldLights();
         }
 
         private bool ApplyHand(Transform target, XRNode node, Quaternion rotation)

@@ -9,13 +9,15 @@ namespace NeuroMita.VR
         private readonly struct LightPlacement
         {
             public readonly Transform Light, Parent;
-            public readonly Vector3 Position, Scale;
-            public readonly Quaternion Rotation;
+            public readonly Vector3 Position, Scale, WorldPosition;
+            public readonly Quaternion Rotation, WorldRotation;
             public readonly int Sibling;
 
             public LightPlacement(Transform light)
             {
                 Light = light;
+                WorldPosition = light.position;
+                WorldRotation = light.rotation;
                 Parent = light.parent;
                 Position = light.localPosition;
                 Rotation = light.localRotation;
@@ -44,6 +46,7 @@ namespace NeuroMita.VR
                     candidate.mitaAnim.gameObject.activeInHierarchy)
                 { character = candidate; break; }
             if (character == null) return null;
+            VrDiagnostics.MenuLighting(camera, character);
             Vector3 origin = character.mitaAnim.transform.position;
             Vector3 direction = camera.transform.position - origin;
             direction.y = 0f;
@@ -54,13 +57,19 @@ namespace NeuroMita.VR
             foreach (var light in camera.GetComponentsInChildren<Light>(true))
             {
                 stage.lights.Add(new LightPlacement(light.transform));
-                light.transform.SetParent(null, true);
+
             }
             Vector3 position = origin + direction.normalized * 2.2f;
             position.y = camera.transform.position.y;
             Quaternion facing = Quaternion.LookRotation(-direction.normalized, Vector3.up);
             camera.transform.SetPositionAndRotation(position, facing);
             return stage;
+        }
+
+        public void HoldLights()
+        {
+            foreach (var placement in lights)
+                if (placement.Light != null) placement.Light.SetPositionAndRotation(placement.WorldPosition, placement.WorldRotation);
         }
 
         public void Dispose()
