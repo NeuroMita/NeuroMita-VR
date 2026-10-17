@@ -17,7 +17,11 @@ namespace NeuroMita.VR
         private readonly Quaternion rotation;
         private readonly IDisposable ownership;
         private readonly IDisposable photoExclusion;
+#if NEUROMITA_VR_IL2CPP
+        private readonly Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<Vector3> corners = new(4);
+#else
         private readonly Vector3[] corners = new Vector3[4];
+#endif
         private bool disposed;
 
         public VrUiSurface(RectTransform view, Camera eye, VrUiPresenter pointer)
@@ -59,9 +63,9 @@ namespace NeuroMita.VR
             {
                 if (graphic.rectTransform.rect.width <= 0f || graphic.rectTransform.rect.height <= 0f) continue;
                 graphic.rectTransform.GetWorldCorners(corners);
-                foreach (var corner in corners)
+                for (int i = 0; i < 4; i++)
                 {
-                    Vector3 local = View.InverseTransformPoint(corner);
+                    Vector3 local = View.InverseTransformPoint(corners[i]);
                     if (!found) { bounds = new Bounds(local, Vector3.zero); found = true; }
                     else bounds.Encapsulate(local);
                 }

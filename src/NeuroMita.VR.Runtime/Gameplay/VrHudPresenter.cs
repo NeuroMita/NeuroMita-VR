@@ -83,7 +83,8 @@ namespace NeuroMita.VR
                 var actor = interactionPanel.CurrentActor;
                 if (actor != null)
                 {
-                    Vector3 head = actor.Links.Head != null ? actor.Links.Head.position :
+                    var headTarget = MitaAI.MitaAttentionTargetResolver.ResolveHead(actor);
+                    Vector3 head = headTarget != null ? headTarget.position :
                         (actor.PersonObject != null ? actor.PersonObject.transform.position : actor.transform.position) + Vector3.up * 1.4f;
                     Quaternion actorFacing = FaceEye(head, eye);
                     Vector3 position = head + actorFacing * new Vector3(0.5f, -0.3f, 0f);

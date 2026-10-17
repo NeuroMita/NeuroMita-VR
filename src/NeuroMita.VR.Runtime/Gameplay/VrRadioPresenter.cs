@@ -75,6 +75,12 @@ namespace NeuroMita.VR
             var facing = Quaternion.LookRotation((anchor - head.position).sqrMagnitude > 0.001f ? anchor - head.position : head.forward, Vector3.up);
             Vector3 center = anchor + facing * new Vector3(0.6f, 0.2f, -0.1f);
             Vector3 direction = center - head.position;
+            if (direction.magnitude > 1.8f || direction.magnitude < 0.65f || Vector3.Angle(head.forward, direction) > 55f)
+            {
+                var upright = Quaternion.Euler(0f, head.eulerAngles.y, 0f);
+                center = head.position + upright * new Vector3(0.25f, -0.12f, 1.15f);
+                direction = center - head.position;
+            }
             rect.SetPositionAndRotation(center, Quaternion.LookRotation(direction.sqrMagnitude > 0.001f ? direction : head.forward, Vector3.up));
             root.GetComponent<RawImage>().texture = texture;
             relay = root.AddComponent<VrToolkitInputRelay>();

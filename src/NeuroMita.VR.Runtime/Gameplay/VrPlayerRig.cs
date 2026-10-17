@@ -50,6 +50,8 @@ namespace NeuroMita.VR
         private float savedNear;
         private StereoTargetEyeMask savedStereo;
         private bool savedOrthographic;
+        private int uiLayerMask;
+        private bool savedUiLayerVisible;
         private Animator cameraAnimator;
         private bool cameraAnimatorEnabled;
         private VrMenuStage menuStage;
@@ -104,6 +106,9 @@ namespace NeuroMita.VR
             savedNear = eye.nearClipPlane;
             savedStereo = eye.stereoTargetEye;
             savedOrthographic = eye.orthographic;
+            int uiLayer = LayerMask.NameToLayer("UI");
+            uiLayerMask = uiLayer >= 0 ? 1 << uiLayer : 0;
+            savedUiLayerVisible = (eye.cullingMask & uiLayerMask) != 0;
             cameraAnimator = actor == null ? eye.GetComponent<Animator>() : null;
             cameraAnimatorEnabled = cameraAnimator != null && cameraAnimator.enabled;
 
@@ -287,6 +292,7 @@ namespace NeuroMita.VR
             eye.nearClipPlane = 0.02f;
             eye.orthographic = false;
             eye.stereoTargetEye = StereoTargetEyeMask.Both;
+            eye.cullingMask |= uiLayerMask;
             TryCreateMenuStage();
             HeadTracked = ReadPose(XRNode.Head, out var headPosition, out var headRotation);
             if (!HeadTracked)
@@ -410,6 +416,7 @@ namespace NeuroMita.VR
                 eye.nearClipPlane = savedNear;
                 eye.stereoTargetEye = savedStereo;
                 eye.orthographic = savedOrthographic;
+                eye.cullingMask = savedUiLayerVisible ? eye.cullingMask | uiLayerMask : eye.cullingMask & ~uiLayerMask;
             eye.ResetProjectionMatrix();
                 eye.ResetStereoProjectionMatrices();
             }
