@@ -78,6 +78,15 @@ namespace NeuroMita.VR
             pressed = true;
             ownsPointer = true;
             Send(EventType.MouseDown);
+            var root = document?.rootVisualElement;
+            var picked = root?.panel?.Cast<BaseVisualElementPanel>().Pick(position);
+            TextField field = null;
+            for (var element = picked; element != null; element = element.parent)
+            {
+                field = element.TryCast<TextField>();
+                if (field != null) break;
+            }
+            if (field != null) VrRuntime.Keyboard?.FocusToolkit(document, field);
         }
         public void OnPointerUp(PointerEventData data)
         {

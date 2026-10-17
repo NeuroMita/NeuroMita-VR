@@ -25,10 +25,11 @@ namespace NeuroMita.VR
 
         private void LateUpdate()
         {
-            if (!VrRuntime.IsActive || VrRuntime.Rig?.Eye == null || VrRuntime.Settings?.VrKeyboard == false)
+            if (!VrRuntime.IsActive || VrRuntime.Rig?.Eye == null || VrRuntime.Settings?.VrKeyboard == false || VrQteInput.HasActiveQte)
             {
                 Hide();
                 target = null;
+                ClearToolkit();
                 return;
             }
             var selected = EventSystem.current?.currentSelectedGameObject;
@@ -42,7 +43,8 @@ namespace NeuroMita.VR
             bool composerHidden = composer != null && composer.ComposerField == target &&
                 (!MitaAI.InputControl.isInputActive ||
                  (AppServices.GetOrNull<UIManager>() is { } manager && manager.FocusedType?.FullName != typeof(MitaAI.InputControl).FullName));
-            if (!Usable(target) || composerHidden) { Hide(); return; }
+            if (toolkitTarget != null && !ToolkitUsable) ClearToolkit();
+            if ((!Usable(target) || composerHidden) && !ToolkitUsable) { Hide(); return; }
             EnsureCanvas();
             canvas.gameObject.SetActive(true);
             canvas.worldCamera = VrRuntime.Rig.Eye;
@@ -67,6 +69,7 @@ namespace NeuroMita.VR
         public void Focus(Selectable field)
         {
             if (!Usable(field)) return;
+            ClearToolkit();
             target = field;
             CaptureSelection();
             EnsureCanvas();
@@ -87,6 +90,7 @@ namespace NeuroMita.VR
 
         private void CaptureSelection()
         {
+            if (ToolkitUsable) { anchor = toolkitTarget.cursorIndex; focus = toolkitTarget.selectIndex; return; }
             if (target?.GetComponent<TMP_InputField>() is {} tmp) { anchor = tmp.selectionStringAnchorPosition; focus = tmp.selectionStringFocusPosition; }
             else if (target?.GetComponent<InputField>() is {} input) { anchor = input.selectionAnchorPosition; focus = input.selectionFocusPosition; }
         }
@@ -103,6 +107,7 @@ namespace NeuroMita.VR
 
         public void Insert(string text)
         {
+            if (ToolkitUsable) { InsertToolkit(text); return; }
             if (!Usable(target)) return;
             RestoreSelection();
             foreach (char character in text ?? string.Empty) Send(new Event { type = EventType.KeyDown, character = character });
@@ -111,6 +116,7 @@ namespace NeuroMita.VR
 
         public void Key(KeyCode code)
         {
+            if (ToolkitUsable) { KeyToolkit(code); return; }
             if (!Usable(target)) return;
             RestoreSelection();
             Send(new Event { type = EventType.KeyDown, keyCode = code });
@@ -141,6 +147,7 @@ namespace NeuroMita.VR
 
         public void Submit()
         {
+            if (ToolkitUsable) { SubmitToolkit(); return; }
             if (!Usable(target)) return;
             var composer = MitaAI.InputControl.Instance;
             if (composer != null && composer.ComposerField == target) composer.TrySubmitDraft();
@@ -241,6 +248,7 @@ namespace NeuroMita.VR
 
         public void Clear()
         {
+            ClearToolkit();
             photoExclusion?.Dispose();
             photoExclusion = null;
             if (canvas != null) DisposeObject(canvas.gameObject);

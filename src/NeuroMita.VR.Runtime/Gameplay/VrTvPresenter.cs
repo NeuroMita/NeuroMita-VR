@@ -11,6 +11,8 @@ namespace NeuroMita.VR
     public sealed partial class VrTvPresenter : MonoBehaviour
     {
         private Canvas canvas;
+        private VrToolkitWorldPanel browser;
+        private UnityEngine.UIElements.UIDocument browserDocument;
         private System.IDisposable photoExclusion;
         private RectTransform panel;
         private TVUIController controller;
@@ -44,10 +46,13 @@ namespace NeuroMita.VR
             var ui = AppServices.GetOrNull<UIManager>();
             bool visible = current != null && current.isActiveAndEnabled && owner != null && owner.IsViewActive &&
                 rig?.Eye != null && Time.timeScale > 0f &&
-                (ui == null || ui.FocusedType == null || ui.FocusedType?.FullName == typeof(TVInputContext).FullName);
+                (ui == null || ui.FocusedType == null || ui.FocusedType?.FullName == typeof(TVInputContext).FullName || ui.FocusedType?.FullName == typeof(TypingBlocker).FullName);
             if (!visible)
             {
                 if (canvas != null) canvas.gameObject.SetActive(false);
+                browser?.Dispose();
+                browser = null;
+                browserDocument = null;
                 controller = null;
                 interaction = null;
                 return;
@@ -63,6 +68,28 @@ namespace NeuroMita.VR
                 var eye = rig.Eye.transform;
                 var facing = Quaternion.Euler(0f, eye.eulerAngles.y, 0f);
                 panel.SetPositionAndRotation(eye.position + facing * new Vector3(0.5f, -0.15f, 0.8f), facing);
+            }
+            var document = current.view != null ? current.view.GetComponent<UnityEngine.UIElements.UIDocument>() : null;
+            if (document != browserDocument)
+            {
+                browser?.Dispose();
+                browser = null;
+                browserDocument = document;
+            }
+            if (browser == null && document?.panelSettings != null)
+                browser = new VrToolkitWorldPanel(document, transform, rig.Eye, pointer);
+            browser?.Refresh(rig.Eye);
+            if (browser?.Canvas != null && pointer?.IsPointingAt(browser.Canvas) == true && current.view != null)
+            {
+                var view = current.view;
+                view.lastPointerActivity = Time.unscaledTime;
+                view.pointerOver = true;
+                if (view.controls != null) { view.controls.style.opacity = 1f; view.controls.SetEnabled(true); }
+                if (view.full && view.browse != null)
+                {
+                    view.browse.style.visibility = UnityEngine.UIElements.Visibility.Visible;
+                    view.browse.SetEnabled(true);
+                }
             }
             if (revision != LocalizationManager.CurrentRevision) RefreshLabels();
             for (int i = 0; i < 7; i++) buttons[i].interactable = current.CanReceivePlaybackActions;
@@ -128,6 +155,9 @@ namespace NeuroMita.VR
 
         private void OnDestroy()
         {
+            browser?.Dispose();
+            browser = null;
+            browserDocument = null;
             photoExclusion?.Dispose();
             if (canvas != null) Destroy(canvas.gameObject);
         }
