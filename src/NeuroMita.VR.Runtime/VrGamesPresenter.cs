@@ -45,6 +45,14 @@ namespace NeuroMita.VR
                 if (!hiddenHints.ContainsKey(root.gameObject)) hiddenHints.Add(root.gameObject, root.gameObject.activeSelf);
                 root.gameObject.SetActive(false);
             }
+            var pinguin = current.Controller.ActiveGame?.TryCast<NeuroMita.Legacy.Games.LegacyPinguinTelevisionGame>();
+            if (pinguin?.keysHint != null)
+                foreach (var hint in pinguin.keysHint)
+                {
+                    if (hint == null) continue;
+                    if (!hiddenHints.ContainsKey(hint)) hiddenHints.Add(hint, hint.activeSelf);
+                    hint.SetActive(false);
+                }
             EnsureCanvas();
             bool opening = !canvas.gameObject.activeSelf;
             canvas.gameObject.SetActive(Time.timeScale > 0f && AppServices.GetOrNull<UIManager>()?.FocusedType == null);

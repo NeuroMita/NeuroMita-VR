@@ -24,6 +24,8 @@ Working menu and apartment rendering does not mean the entire game is playable w
 
 October 18 UI batch: Mita action buttons are anchored to her body, with stats above her head during interaction. Panel obstacle checks, projected easel tools and Russian VR settings labels are implemented but still await headset acceptance. A follow-up batch implements larger easel tools, ray-based drawing and the native console command catalog; the user has now confirmed easel drawing. The console opens, but pointer visibility and reliable clicking are still being improved. Integration into the standard settings page remains unfinished. Full TV browser projection and Toolkit text entry are also awaiting acceptance.
 
+The October 18 static batch adds experimental physical bat swings, manual blinking with right-stick click while the blink mechanic is active, left-stick input for the TV Penguin / snowball game, and VR-device information in Mita's dialogue context. These features compile but have not been checked in a live process or headset yet. Select and hold the bat in the right hand, then slow it down before another strike. Automatic bat geometry detection and swing thresholds still need acceptance. While the blink mechanic is active, right-stick click blinks instead of toggling hints.
+
 ## Compatibility
 
 - Windows x64, IL2CPP, Unity **6000.3.12f1**.

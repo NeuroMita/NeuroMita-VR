@@ -190,6 +190,7 @@ namespace NeuroMita.VR
             gameObject.AddComponent<VrEaselPresenter>();
             gameObject.AddComponent<VrSceneTransitionPresenter>();
             gameObject.AddComponent<VrWorldInteractionSession>();
+            gameObject.AddComponent<VrBatSwing>();
             contextActions = gameObject.AddComponent<VrContextActionsPresenter>();
             gameObject.AddComponent<VrTvPresenter>();
             settingsPanel = gameObject.AddComponent<VrSettingsPanel>();
@@ -201,6 +202,9 @@ namespace NeuroMita.VR
             VrEarlyInputLoop.Install();
             initialized = true;
             VrDiscordPresence.Install();
+            VrDialogueContext.Install();
+            VrBlinkInput.Install();
+            VrSnowballInput.Install();
             graphics = gameObject.AddComponent<VrGraphicsPresenter>();
             Keyboard = gameObject.AddComponent<VrVirtualKeyboard>();
             Status = "OpenXR active";
@@ -317,7 +321,7 @@ namespace NeuroMita.VR
             }
             VrDiagnostics.HostControls(rig, down, movement);
             NeuroMita.Modding.ExternalControlBridge.SetCameraOwnership(controlSession, rig != null ? rig.Player : null, true);
-            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, !VrQteInput.CapturesActions && (Input.HelpDown || VrDebugControl.HelpRequested), ResolveHelpText());
+            NeuroMita.Modding.ExternalControlBridge.SetPresentation(controlSession, true, !VrQteInput.CapturesActions && ((!VrBlinkInput.CapturesHelp && Input.HelpDown) || VrDebugControl.HelpRequested), ResolveHelpText());
             VrDebugControl.HelpRequested = false;
             NeuroMita.Modding.ExternalControlBridge.SetSpeechPolicy(controlSession, true, !VrQteInput.CapturesActions && rig?.HeadTracked == true && rig.LeftHandTracked);
             NeuroMita.Modding.ExternalControlBridge.SetAvatarPresentation(controlSession, Settings?.VrAvatarMode ?? 0, rig?.UseIsolatedHands == true);
@@ -342,7 +346,7 @@ namespace NeuroMita.VR
             const string key = "ui.gameplay_help.vr";
             string text = LocalizationManager.GetTableString(key);
             if (string.IsNullOrWhiteSpace(text) || text == key)
-                text = "<b>VR controls</b>\nLeft stick: move; right stick: turn\nLeft Y: pause / back / close player\nRight stick click: show / hide hints\nRight trigger: click / drag UI\nRight grip: interact\nLeft trigger: inventory; tap left X: chat, hold 3s: console\nRight A: jump / submit chat; right B: action menu\nHold both stick clicks: recenter";
+                text = "<b>VR controls</b>\nLeft stick: move; right stick: turn\nLeft Y: pause / back / close player\nRight stick click: blink when active, otherwise show / hide hints\nRight trigger: click / drag UI\nRight grip: interact\nLeft trigger: inventory; tap left X: chat, hold 3s: console\nRight A: jump / submit chat; right B: action menu\nHold both stick clicks: recenter";
             return text
                 .Replace("Right trigger: click / drag UI", "Aim the cyan ray at UI\nRight trigger: click / drag UI")
                 .Replace("Правый триггер: выбор / перетаскивание", "Цельтесь лучом в интерфейс\nПравый триггер: выбор / перетаскивание");
@@ -426,6 +430,9 @@ namespace NeuroMita.VR
             Cleanup(VrWorldInteractionHooks.Remove, "world interaction hooks");
             VrConsoleAccess.Clear();
             Cleanup(VrDiscordPresence.Remove, "Discord presence");
+            Cleanup(VrDialogueContext.Remove, "dialogue context");
+            Cleanup(VrBlinkInput.Remove, "manual blink");
+            Cleanup(VrSnowballInput.Remove, "snowball input");
             Cleanup(() => VrHostEvents.Scenes(OnSceneLoaded, OnActiveSceneChanged, false), "scene callbacks");
             Cleanup(() => RefreshMenuAttention(null), "menu attention");
             Cleanup(() => hud?.Restore(), "HUD");

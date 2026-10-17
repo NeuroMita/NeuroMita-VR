@@ -81,3 +81,10 @@ Validation: built against public v2026.10.15 interop, zero build warnings/errors
 User-tested public host ran latest installed fcd2268 through menu and house. At 20:52:44 UTC the runtime stopped after an IL2CPP NullReferenceException in Component.get_gameObject, VrContextActionsPresenter.ResolveInteractionRay line 144. The managed ActionPanel outlived its scene-owned Canvas; checking the managed panel reference did not establish that the native Canvas still existed. The broad frame handler then intentionally cleaned up XR. This is a mod UI lifetime failure, not a SteamVR startup failure.
 
 ResolveInteractionRay now validates the native canvas before accessing gameObject and uses that validated reference for picking. LateUpdate recreates each ActionPanel when its scene canvas has been destroyed, rather than using managed ??= on a surviving wrapper. No new live restart was performed for this correction; native build/static audit passed. Required combined regression: repeated world-context actions, scene/menu transitions and reopening item/world panels without ending XR.
+
+
+## October 18 static-only interaction batch
+
+Added VrBatSwing, VrBlinkInput, VrSnowballInput and VrDialogueContext in the external mod only. Updated RU/EN README and the interaction audit with bindings, source ownership, reset/cleanup behavior and unaccepted cases. No host/API/release source edits, no Unity operations, no player launch, scene command or hot replacement in the running player. Current player retains its previously installed runtime until a later explicitly scheduled restart/install.
+
+Build and public-host IL2CPP audit pass; native installation and headset behavior are still pending. Bat geometry is estimated from the held visual and needs actual swing tests; blink/help arbitration and snowball physics need live coverage. The dialogue hook preserves original event ids and request retry semantics without adding persistent pending events. Upcoming combined acceptance should cover the preceding console/TV/movement UI batch together with these interactions, rather than restarting for each small feature.
