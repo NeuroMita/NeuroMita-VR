@@ -1,3 +1,4 @@
+using NeuroMita.Menu;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -12,6 +13,8 @@ namespace NeuroMita.VR
         private Canvas owner;
         private int pageIndex;
         private float nextDiscovery;
+        private string language;
+        private Text entryLabel;
         private readonly PropertyInfo[] settings = typeof(VrSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanWrite && (p.PropertyType == typeof(bool) || p.PropertyType == typeof(int))).ToArray();
         public VrSettingsPanel(IntPtr pointer) : base(pointer) { }
@@ -28,11 +31,23 @@ namespace NeuroMita.VR
                 if (page != null) page.gameObject.SetActive(false);
                 return;
             }
-            if (root != null && owner == canvas) { root.gameObject.SetActive(true); return; }
+            if (root != null && owner == canvas)
+            {
+                root.gameObject.SetActive(true);
+                if (language != LocalizationManager.CurrentLanguage)
+                {
+                    language = LocalizationManager.CurrentLanguage;
+                    entryLabel.text = VrSettingsText.Pick("VR Settings", "Настройки VR");
+                    entryLabel.font = LocalizationManager.CurrentFont ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    Rebuild();
+                }
+                return;
+            }
             if (root != null) Destroy(root.gameObject);
             owner = canvas;
             root = VrModPanel.Rect("VR settings", canvas.transform, new Vector2(780f, 600f), Vector2.zero);
-            VrModPanel.Button(root, "VR Settings", new Vector2(260f, 60f), new Vector2(0f, -365f), () => Open());
+            language = LocalizationManager.CurrentLanguage;
+            entryLabel = VrModPanel.Button(root, VrSettingsText.Pick("VR Settings", "Настройки VR"), new Vector2(260f, 60f), new Vector2(0f, -365f), () => Open()).GetComponentInChildren<Text>();
             page = VrModPanel.Rect("VR settings page", root, new Vector2(780f, 600f), new Vector2(0f, 0f));
             page.localPosition = new Vector3(0f, 0f, -2f);
             page.gameObject.AddComponent<Image>().color = new Color(0.055f, 0.025f, 0.075f, 1f);
@@ -57,17 +72,17 @@ namespace NeuroMita.VR
                 Destroy(old);
             }
             int pages = (settings.Length + 5) / 6;
-            VrModPanel.Label(page, "VR Settings  " + (pageIndex + 1) + " / " + pages, new Vector2(600f, 50f), new Vector2(0f, 260f), 30);
+            VrModPanel.Label(page, VrSettingsText.Pick("VR Settings  ", "Настройки VR  ") + (pageIndex + 1) + " / " + pages, new Vector2(600f, 50f), new Vector2(0f, 260f), 30);
             for (int row = 0; row < 6; row++)
             {
                 int index = pageIndex * 6 + row;
                 if (index >= settings.Length) break;
                 var property = settings[index];
                 float y = 190f - row * 68f;
-                string title = System.Text.RegularExpressions.Regex.Replace(property.Name.Substring(2), "([a-z])([A-Z])", "$1 $2");
+                string title = VrSettingsText.Title(property.Name);
                 VrModPanel.Label(page, title, new Vector2(440f, 56f), new Vector2(-145f, y));
                 if (property.PropertyType == typeof(bool))
-                    VrModPanel.Button(page, (bool)property.GetValue(VrSettings.Current) ? "On" : "Off", new Vector2(230f, 54f), new Vector2(235f, y), () => Change(property, 1));
+                    VrModPanel.Button(page, (bool)property.GetValue(VrSettings.Current) ? VrSettingsText.Pick("On", "Вкл.") : VrSettingsText.Pick("Off", "Выкл."), new Vector2(230f, 54f), new Vector2(235f, y), () => Change(property, 1));
                 else
                 {
                     VrModPanel.Label(page, Display(property), new Vector2(150f, 56f), new Vector2(235f, y));
@@ -75,20 +90,20 @@ namespace NeuroMita.VR
                     VrModPanel.Button(page, "+", new Vector2(54f, 54f), new Vector2(340f, y), () => Change(property, 1));
                 }
             }
-            VrModPanel.Button(page, "Previous", new Vector2(200f, 54f), new Vector2(-250f, -240f), () => { pageIndex = (pageIndex + pages - 1) % pages; Rebuild(); });
-            VrModPanel.Button(page, "Close", new Vector2(200f, 54f), new Vector2(0f, -240f), () => ClosePage());
-            VrModPanel.Button(page, "Next", new Vector2(200f, 54f), new Vector2(250f, -240f), () => { pageIndex = (pageIndex + 1) % pages; Rebuild(); });
+            VrModPanel.Button(page, VrSettingsText.Pick("Previous", "Назад"), new Vector2(200f, 54f), new Vector2(-250f, -240f), () => { pageIndex = (pageIndex + pages - 1) % pages; Rebuild(); });
+            VrModPanel.Button(page, VrSettingsText.Pick("Close", "Закрыть"), new Vector2(200f, 54f), new Vector2(0f, -240f), () => ClosePage());
+            VrModPanel.Button(page, VrSettingsText.Pick("Next", "Далее"), new Vector2(200f, 54f), new Vector2(250f, -240f), () => { pageIndex = (pageIndex + 1) % pages; Rebuild(); });
         }
 
         private static string[] Choices(string name) => name switch
         {
-            "VrTurnMode" => new[] { "Snap", "Smooth" },
-            "VrMovementDirection" => new[] { "Head", "Left hand", "Body" },
-            "VrSprintMode" => new[] { "Hold", "Toggle", "Off" },
-            "VrUiFollow" => new[] { "Fixed", "Comfort", "Follow" },
-            "VrAvatarMode" => new[] { "VR hands", "Full body", "Hidden" },
-            "VrGraphicsPreset" => new[] { "Quality", "Performance", "Balanced" },
-            "VrHaptics" => new[] { "Off", "Low", "Normal" },
+            "VrTurnMode" => new[] { VrSettingsText.Pick("Snap", "Пошаговый"), VrSettingsText.Pick("Smooth", "Плавный") },
+            "VrMovementDirection" => new[] { VrSettingsText.Pick("Head", "Голова"), VrSettingsText.Pick("Left hand", "Левая рука"), VrSettingsText.Pick("Body", "Тело") },
+            "VrSprintMode" => new[] { VrSettingsText.Pick("Hold", "Удерживать"), VrSettingsText.Pick("Toggle", "Переключать"), VrSettingsText.Pick("Off", "Выкл.") },
+            "VrUiFollow" => new[] { VrSettingsText.Pick("Fixed", "Фиксированно"), VrSettingsText.Pick("Comfort", "Комфорт"), VrSettingsText.Pick("Follow", "Следовать") },
+            "VrAvatarMode" => new[] { VrSettingsText.Pick("VR hands", "Кисти VR"), VrSettingsText.Pick("Full body", "Всё тело"), VrSettingsText.Pick("Hidden", "Скрыто") },
+            "VrGraphicsPreset" => new[] { VrSettingsText.Pick("Quality", "Качество"), VrSettingsText.Pick("Performance", "Производительность"), VrSettingsText.Pick("Balanced", "Баланс") },
+            "VrHaptics" => new[] { VrSettingsText.Pick("Off", "Выкл."), VrSettingsText.Pick("Low", "Слабая"), VrSettingsText.Pick("Normal", "Обычная") },
             _ => null
         };
         private static string Display(PropertyInfo property)
