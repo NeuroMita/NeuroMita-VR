@@ -25,6 +25,10 @@ namespace NeuroMita.VR
         private void Update()
         {
             if (cancelled || Time.realtimeSinceStartup < 5f) return;
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            bool menuReady = NeuroMita.Menu.MenuSceneResolver.ResolvePrimaryRoot(scene) != null;
+            bool playerReady = AppServices.GetOrNull<GlobalReferences>()?.PlayerActor != null;
+            if ((!menuReady && !playerReady) || SceneService.IsTransitionInProgress) return;
             cancelled = true;
             pending = null;
             try { VrRuntime.StartVr(); }

@@ -41,6 +41,19 @@ namespace NeuroMita.VR
                     if (radio == null) throw new InvalidOperationException("No radio in the current scene.");
                     radio.SetUIMode(true);
                 }
+                else if (command == "views")
+                {
+                    VrDiagnostics.Mark("XR render state", "display=" + VrRuntime.XrDisplay?.running + ", renderPasses=" + VrRuntime.XrDisplay?.GetRenderPassCount());
+                    foreach (var camera in FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                        VrDiagnostics.Mark("view camera", camera.name + ", scene=" + camera.gameObject.scene.name + ", active=" + camera.isActiveAndEnabled + ", depth=" + camera.depth + ", stereoEnabled=" + camera.stereoEnabled + ", stereo=" + camera.stereoTargetEye + ", position=" + camera.transform.position + ", rotation=" + camera.transform.eulerAngles);
+                    foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    {
+                        VrDiagnostics.Mark("view canvas", canvas.name + ", scene=" + canvas.gameObject.scene.name + ", active=" + canvas.isActiveAndEnabled + ", mode=" + canvas.renderMode + ", order=" + canvas.sortingOrder + ", position=" + canvas.transform.position + ", scale=" + canvas.transform.lossyScale + ", root=" + canvas.isRootCanvas);
+                        if (!canvas.isActiveAndEnabled) continue;
+                        foreach (var graphic in canvas.GetComponentsInChildren<UnityEngine.UI.Graphic>(false))
+                            VrDiagnostics.Mark("view graphic", graphic.name + ", type=" + graphic.GetIl2CppType().FullName + ", enabled=" + graphic.enabled + ", alpha=" + graphic.color.a + ", raycast=" + graphic.raycastTarget + ", position=" + graphic.transform.position);
+                    }
+                }
                 else if (command == "state")
                 {
                     VrDiagnostics.UiState();

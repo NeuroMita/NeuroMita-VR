@@ -22,7 +22,7 @@ IL2CPP host methods are native code. The exact matching GameAssembly.pdb, if ava
 
 ## Recorded diagnostics
 
-The launch prints a new ignored artifacts/vr-debug/<timestamp> directory. The mod writes flushed phase markers there when NEUROMITA_VR_DIAGNOSTICS is set. An optional command.txt accepts only `capture`, `state`, `house`, `crazy-house`, `menu`, `stop`, `pause-test`, `help-test`, or `radio-test`; it is consumed on the main thread. `house` uses the host menu transition to KindHouse and requires an active menu. Screenshots are saved in the same directory.
+The launch prints a new ignored artifacts/vr-debug/<timestamp> directory. The mod writes flushed phase markers there when NEUROMITA_VR_DIAGNOSTICS is set. An optional command.txt accepts only `capture`, `views`, `state`, `house`, `crazy-house`, `menu`, `stop`, `pause-test`, `help-test`, or `radio-test`; it is consumed on the main thread. `house` uses the host menu transition to KindHouse and requires an active menu. Screenshots are saved in the same directory.
 
 For unattended crash capture, tools/Start-VrDebug.ps1 uses a Microsoft-signed ProcDump executable supplied locally. It records first-chance access violations and termination dumps. Do not use ProcDump and Visual Studio simultaneously on one process. These tools do not register a global postmortem debugger. The launch flag -silent-crashes avoids the Unity crash dialog while leaving exceptions observable to the debugger/dump monitor.
 
@@ -35,3 +35,5 @@ On the 46d89dce host, mixed debugging identified a crash in GCHandle::GetTarget 
 The pause-test/help-test commands inject a single diagnostic edge through the normal published host API; they do not emulate a physical controller. radio-test opens the first scene radio through its host SetUIMode entrypoint. state records the current UI focus, back availability, help visibility and radio open state. Use these only on an isolated test copy; they change gameplay UI. The early PlayerLoop callback is verified by reading the current loop back after installation, including nested IL2CPP value-type writeback.
 
 From the main menu, tools/Test-VrUi.ps1 -RunDirectory <current diagnostic run> performs and checks the CrazyHouse pause/hints/radio smoke. It changes the active scene and UI. It tests synthetic input edges; physical Touch acceptance remains separate.
+
+The views diagnostic command logs all camera and canvas states, active graphics, stereoEnabled and XR render-pass count. It does not reposition or toggle views. A running display with stereo enabled and render passes is pipeline evidence, not proof of the image seen by the headset user.
