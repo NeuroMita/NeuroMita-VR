@@ -388,8 +388,11 @@ namespace NeuroMita.VR
         {
             Transform leftTarget = UseIsolatedHands && leftProxy != null ? leftProxy.transform : leftHand;
             Transform rightTarget = UseIsolatedHands && rightProxy != null ? rightProxy.transform : rightHand;
-            BindItemMount(ref leftMountBinding, player?.MountRig?.LeftHandMount?.ItemMount, leftTarget, leftTracked);
-            BindItemMount(ref rightMountBinding, player?.MountRig?.RightHandMount?.ItemMount, rightTarget, rightTracked);
+            var mounts = player != null ? player.MountRig : null;
+            var leftPoint = mounts != null ? mounts.LeftHandMount : null;
+            var rightPoint = mounts != null ? mounts.RightHandMount : null;
+            BindItemMount(ref leftMountBinding, leftPoint != null ? leftPoint.ItemMount : null, leftTarget, leftTracked);
+            BindItemMount(ref rightMountBinding, rightPoint != null ? rightPoint.ItemMount : null, rightTarget, rightTracked);
         }
 
         private static void BindItemMount(ref HandMountBinding binding, Transform mount, Transform hand, bool tracked)

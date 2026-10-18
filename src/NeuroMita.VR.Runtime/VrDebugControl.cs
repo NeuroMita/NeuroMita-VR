@@ -39,6 +39,13 @@ namespace NeuroMita.VR
                 if (command == "capture") Capture(Path.Combine(directory, "game-" + DateTime.UtcNow.ToString("HHmmss") + ".png"));
                 else if (command == "pause-test") PauseRequested = true;
                 else if (command == "help-test") HelpRequested = true;
+                else if (command == "easel-test")
+                {
+                    var easel = FindFirstObjectByType<EaselController>();
+                    if (easel == null) throw new InvalidOperationException("No easel in current scene");
+                    AppServices.GetOrNull<UIManager>()?.RequestOpen<EaselController>();
+                }
+                else if (command == "easel-close") AppServices.GetOrNull<UIManager>()?.RequestClose<EaselController>();
                 else if (command == "radio-test")
                 {
                     var radio = UnityEngine.Object.FindFirstObjectByType<Radio>();
