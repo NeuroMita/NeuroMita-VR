@@ -2,6 +2,10 @@
 
 [Русский](README.md) · [English](README.en.md)
 
+**Download:** [v0.1.0-alpha.1](https://github.com/NeuroMita/NeuroMita-VR/releases/tag/v0.1.0-alpha.1) · [Release installation and limitations (RU/EN)](docs/release-v0.1.0-alpha.1.md).
+
+**Mod version: 0.1.0-alpha.1. Targets NeuroMita 0.1.1** (tested Windows IL2CPP host: internal version v2026.10.15). The mod and game use separate version numbers.
+
 An experimental external VR mod for [NeuroMita](https://github.com/VinerX/NeuroMita), using Windows x64, Unity IL2CPP, BepInEx 6 and OpenXR. It runs on top of a built game; playing does not require a separate VR game build or Unity Editor.
 
 **This mod is under active development. It is not a complete VR edition with full gameplay support.** You can enter the main menu and an apartment, but several interactions and interfaces still need adaptation. Contributions and further development are welcome.

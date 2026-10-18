@@ -8,7 +8,7 @@ using Il2CppInterop.Runtime.Injection;
 
 namespace NeuroMitaVRmod;
 
-[BepInPlugin("vinerx.neuromita.vr", "NeuroMita VR", "0.1.0")]
+[BepInPlugin("vinerx.neuromita.vr", "NeuroMita VR", "0.1.0-alpha.1")]
 public sealed class Plugin : BasePlugin
 {
     private Type bootstrap;

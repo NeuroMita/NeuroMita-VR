@@ -49,14 +49,15 @@ $assetDocs = Join-Path $staging 'assets'
 New-Item -ItemType Directory -Path $assetDocs -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $repoRoot 'assets/README.md') -Destination $assetDocs
 Copy-Item -LiteralPath (Join-Path $repoRoot 'tools/Start-VrMod.ps1') -Destination $staging
+Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/release-v0.1.0-alpha.1.md') -Destination (Join-Path $staging 'INSTALL-RU-EN.md')
 Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE'),(Join-Path $repoRoot 'THIRD_PARTY_NOTICES.md') -Destination $staging
 $files = @(Get-ChildItem -LiteralPath $staging -File -Recurse | ForEach-Object {
     @{ path=$_.FullName.Substring($staging.Length+1).Replace('\','/'); sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
 })
 $sourceRevision = (& git -C $repoRoot rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot read mod source revision.' }
-$sourceDirty = [bool](& git -C $repoRoot status --porcelain -- src tools)
-@{ kind='experimental-gameplay-vr'; openXRVersion=$version; fullVrRuntime=$true; headsetAcceptance=$false; modSourceRevision=$sourceRevision; modSourceDirty=$sourceDirty; files=$files } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $staging 'package-receipt.json') -Encoding utf8
+$sourceDirty = [bool](& git -C $repoRoot status --porcelain -- src tools docs assets README.md README.en.md LICENSE THIRD_PARTY_NOTICES.md)
+@{ modVersion='0.1.0-alpha.1'; targetGameVersion='0.1.1'; testedHostVersion='v2026.10.15'; kind='experimental-gameplay-vr'; openXRVersion=$version; fullVrRuntime=$true; headsetAcceptance=$false; modSourceRevision=$sourceRevision; modSourceDirty=$sourceDirty; files=$files } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $staging 'package-receipt.json') -Encoding utf8
 $archive = "$staging.zip"
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive
 Write-Output $archive
